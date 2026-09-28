@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/app/features/categories/add-category-dia"  ],
   "exclude": ["node_modules"]
 }
