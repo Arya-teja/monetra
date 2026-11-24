@@ -49,10 +49,14 @@ func run() error {
 	authService := service.NewAuthService(postgres.NewUserRepository(pool), tokens)
 	accountRepo := postgres.NewAccountRepository(pool)
 	categoryRepo := postgres.NewCategoryRepository(pool)
+	transactionRepo := postgres.NewTransactionRepository(pool)
+	budgetRepo := postgres.NewBudgetRepository(pool)
+
 	accountService := service.NewAccountService(accountRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
-	transactionService := service.NewTransactionService(postgres.NewTransactionRepository(pool), accountRepo, categoryRepo)
-	budgetService := service.NewBudgetService(postgres.NewBudgetRepository(pool), categoryRepo)
+	transactionService := service.NewTransactionService(transactionRepo, accountRepo, categoryRepo)
+	budgetService := service.NewBudgetService(budgetRepo, categoryRepo)
+	dashboardService := service.NewDashboardService(postgres.NewDashboardRepository(pool), transactionRepo, budgetRepo, time.Now)
 
 	health := handler.NewHealthHandler(pool)
 	authHandler := handler.NewAuthHandler(authService)
@@ -60,6 +64,7 @@ func run() error {
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	budgetHandler := handler.NewBudgetHandler(budgetService)
+	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 	requireAuth := middleware.Auth(tokens)
 
 	mux := http.NewServeMux()
@@ -93,6 +98,9 @@ func run() error {
 	protected("POST /api/v1/budgets/copy", budgetHandler.Copy)
 	protected("PATCH /api/v1/budgets/{id}", budgetHandler.Update)
 	protected("DELETE /api/v1/budgets/{id}", budgetHandler.Delete)
+
+	protected("GET /api/v1/dashboard/summary", dashboardHandler.Summary)
+	protected("GET /api/v1/dashboard/trend", dashboardHandler.Trend)
 
 	mux.HandleFunc("/", handler.NotFound)
 

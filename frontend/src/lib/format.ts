@@ -26,6 +26,14 @@ export function formatMonth(month: string) {
     }).format(new Date(`${month}-01`));
 }
 
+// Formats a month ("YYYY-MM") as a short label such as "Nov".
+export function formatMonthShort(month: string) {
+    return new Intl.DateTimeFormat("id-ID", {
+        month: "short",
+        timeZone: "UTC",
+    }).format(new Date(`${month}-01`));
+}
+
 // Today's date in Asia/Jakarta as "YYYY-MM-DD".
 export function todayInJakarta() {
     return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
