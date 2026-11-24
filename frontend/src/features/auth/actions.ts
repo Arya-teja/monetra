@@ -1,49 +1,32 @@
 "use server";
 
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
-import { z } from "zod";
-
-const registerSchema = z.object({
-  name: z.string().min(2, "Nama minimal 2 karakter"),
-  email: z.email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-});
+import { apiRequest } from "@/lib/api";
+import { registerSchema } from "@/features/auth/schemas";
 
 export async function registerUser(data: FormData) {
-  const rawData = {
+  const parsed = registerSchema.safeParse({
     name: data.get("name"),
     email: data.get("email"),
     password: data.get("password"),
-  };
-
-  //cek apakah data registeruser valid sesuai kebutuhan registerSchema
-  const parsed = registerSchema.safeParse(rawData);
+  });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
 
-  //cek apakah email sudah digunakan
-  const { name, email, password } = parsed.data;
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
+  const result = await apiRequest("/auth/register", {
+    method: "POST",
+    body: parsed.data,
   });
-  if (existingUser) {
-    return { error: "Email sudah digunakan" };
+
+  if (!result.ok) {
+    return {
+      error:
+        result.error.code === "CONFLICT"
+          ? "Email sudah digunakan"
+          : "Registrasi gagal. Silakan coba lagi.",
+    };
   }
-
-  //cek apakah password sudah di hash
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-    },
-  });
 
   return { success: true };
 }

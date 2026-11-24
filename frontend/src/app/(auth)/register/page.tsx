@@ -110,7 +110,7 @@ export default function RegisterPage() {
                     type="password"
                     name="password"
                     id="password"
-                    placeholder="Minimal 6 karakter"
+                    placeholder="Minimal 8 karakter"
                     required
                     className="h-11 bg-background"
                   />

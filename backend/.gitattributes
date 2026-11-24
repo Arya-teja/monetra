@@ -1,0 +1,2 @@
+# gofmt requires LF line endings, also on Windows checkouts.
+*.go text eol=lf

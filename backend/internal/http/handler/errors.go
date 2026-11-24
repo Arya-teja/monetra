@@ -1,0 +1,28 @@
+package handler
+
+import (
+	"errors"
+	"log/slog"
+	"net/http"
+
+	"github.com/Arya-teja/monetra/backend/internal/domain"
+	"github.com/Arya-teja/monetra/backend/internal/http/response"
+)
+
+// writeError maps a service error to the standard error response.
+func writeError(w http.ResponseWriter, err error) {
+	var validationErr *domain.ValidationError
+	switch {
+	case errors.As(err, &validationErr):
+		response.ValidationError(w, validationErr.Fields)
+	case errors.Is(err, domain.ErrInvalidCredentials):
+		response.Error(w, http.StatusUnauthorized, response.CodeUnauthorized, "invalid email or password")
+	case errors.Is(err, domain.ErrEmailTaken):
+		response.Error(w, http.StatusConflict, response.CodeConflict, "email already registered")
+	case errors.Is(err, domain.ErrNotFound):
+		response.Error(w, http.StatusNotFound, response.CodeNotFound, "resource not found")
+	default:
+		slog.Error("unhandled error", "error", err)
+		response.Error(w, http.StatusInternalServerError, response.CodeInternal, "internal server error")
+	}
+}

@@ -1,14 +1,16 @@
 import NextAuth from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "../lib/prisma";
-import bcrypt from "bcryptjs";
 import Credentials from "next-auth/providers/credentials";
+import { apiRequest } from "@/lib/api";
+
+type LoginResponse = {
+  accessToken: string;
+  user: { id: string; name: string; email: string };
+};
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 7, // 7 days, same as the Go access token
     updateAge: 60 * 60 * 24, // 24 hours
   },
   pages: {
@@ -23,27 +25,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+        const result = await apiRequest<LoginResponse>("/auth/login", {
+          method: "POST",
+          body: { email: credentials?.email, password: credentials?.password },
         });
-        if (!user) {
+        if (!result.ok) {
           return null;
         }
-        const isMatch = await bcrypt.compare(
-          credentials.password as string,
-          user.password as string,
-        );
-        if (!isMatch) {
-          return null;
-        }
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
+
+        const { accessToken, user } = result.data;
+        return { id: user.id, name: user.name, email: user.email, accessToken };
       },
     }),
   ],
@@ -51,14 +42,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = user.id as string;
+        token.accessToken = user.accessToken;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-      }
+      session.user.id = token.id;
+      session.accessToken = token.accessToken;
       return session;
     },
   },

@@ -16,7 +16,12 @@ import (
 	"github.com/Arya-teja/monetra/backend/internal/config"
 	"github.com/Arya-teja/monetra/backend/internal/http/handler"
 	"github.com/Arya-teja/monetra/backend/internal/http/middleware"
+	"github.com/Arya-teja/monetra/backend/internal/repository/postgres"
+	"github.com/Arya-teja/monetra/backend/internal/service"
 )
+
+// accessTokenTTL matches the NextAuth session maxAge on the frontend.
+const accessTokenTTL = 7 * 24 * time.Hour
 
 func main() {
 	if err := run(); err != nil {
@@ -40,10 +45,18 @@ func run() error {
 	}
 	defer pool.Close()
 
+	tokens := service.NewTokenManager(cfg.JWTSecret, accessTokenTTL)
+	authService := service.NewAuthService(postgres.NewUserRepository(pool), tokens)
+
 	health := handler.NewHealthHandler(pool)
+	authHandler := handler.NewAuthHandler(authService)
+	requireAuth := middleware.Auth(tokens)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/v1/health", health.Check)
+	mux.HandleFunc("POST /api/v1/auth/register", authHandler.Register)
+	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
+	mux.Handle("GET /api/v1/auth/me", requireAuth(http.HandlerFunc(authHandler.Me)))
 	mux.HandleFunc("/", handler.NotFound)
 
 	srv := &http.Server{

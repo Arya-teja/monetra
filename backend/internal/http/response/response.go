@@ -9,13 +9,17 @@ import (
 type ErrorCode string
 
 const (
-	CodeNotFound ErrorCode = "NOT_FOUND"
-	CodeInternal ErrorCode = "INTERNAL_ERROR"
+	CodeValidation   ErrorCode = "VALIDATION_ERROR"
+	CodeUnauthorized ErrorCode = "UNAUTHORIZED"
+	CodeNotFound     ErrorCode = "NOT_FOUND"
+	CodeConflict     ErrorCode = "CONFLICT"
+	CodeInternal     ErrorCode = "INTERNAL_ERROR"
 )
 
 type errorBody struct {
-	Code    ErrorCode `json:"code"`
-	Message string    `json:"message"`
+	Code    ErrorCode         `json:"code"`
+	Message string            `json:"message"`
+	Details map[string]string `json:"details,omitempty"`
 }
 
 type envelope struct {
@@ -31,6 +35,15 @@ func JSON(w http.ResponseWriter, status int, data any) {
 // Error writes an error response: { "error": { "code": ..., "message": ... } }.
 func Error(w http.ResponseWriter, status int, code ErrorCode, message string) {
 	write(w, status, envelope{Error: &errorBody{Code: code, Message: message}})
+}
+
+// ValidationError writes a 400 response with a message per invalid field.
+func ValidationError(w http.ResponseWriter, details map[string]string) {
+	write(w, http.StatusBadRequest, envelope{Error: &errorBody{
+		Code:    CodeValidation,
+		Message: "invalid input",
+		Details: details,
+	}})
 }
 
 func write(w http.ResponseWriter, status int, body envelope) {
