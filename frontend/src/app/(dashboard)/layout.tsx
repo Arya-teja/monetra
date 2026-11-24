@@ -36,7 +36,7 @@ export default async function DashboardLayout({
               Transaksi
             </Link>
             <Link href="/accounts" className="hover:text-foreground">
-              Akun Bank
+              Akun
             </Link>
           </nav>
 

@@ -69,8 +69,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusOK, struct {
 		AccessToken string       `json:"accessToken"`
+		ExpiresAt   time.Time    `json:"expiresAt"`
 		User        userResponse `json:"user"`
-	}{AccessToken: token, User: toUserResponse(user)})
+	}{AccessToken: token.Value, ExpiresAt: token.ExpiresAt, User: toUserResponse(user)})
 }
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {

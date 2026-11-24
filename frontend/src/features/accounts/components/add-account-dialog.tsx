@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createBankAccount } from "../actions";
+import { createAccount } from "../actions";
+import { accountTypeLabels, accountTypes } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,9 +31,9 @@ export function AddAccountDialog() {
     setLoading(true);
     setError(null);
 
-    const result = await createBankAccount(formData);
+    const result = await createAccount(formData);
 
-    if (result?.error) {
+    if ("error" in result) {
       setError(result.error);
       setLoading(false);
       return;
@@ -53,7 +54,7 @@ export function AddAccountDialog() {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Tambah Akun Bank</DialogTitle>
+          <DialogTitle>Tambah Akun</DialogTitle>
         </DialogHeader>
 
         <form action={handleSubmit} className="space-y-4">
@@ -63,41 +64,45 @@ export function AddAccountDialog() {
               id="name"
               name="name"
               required
+              maxLength={50}
               placeholder="Contoh: Tabungan Utama"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bankName">Nama Bank</Label>
-            <Input
-              id="bankName"
-              name="bankName"
-              required
-              placeholder="Contoh: BCA, Gopay"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accountNumber">Nomor Akun</Label>
-            <Input
-              id="accountNumber"
-              name="accountNumber"
-              required
-              placeholder="Nomor rekening/akun"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="type">Tipe</Label>
-            <Select name="type" defaultValue="BANK">
+            <Select name="type" defaultValue="bank">
               <SelectTrigger id="type" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="BANK">Bank</SelectItem>
-                <SelectItem value="EWALLET">E-Wallet</SelectItem>
+                {accountTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {accountTypeLabels[type]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="institutionName">Nama Institusi (opsional)</Label>
+            <Input
+              id="institutionName"
+              name="institutionName"
+              maxLength={50}
+              placeholder="Contoh: BSI, GoPay"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="accountNumber">Nomor Akun (opsional)</Label>
+            <Input
+              id="accountNumber"
+              name="accountNumber"
+              maxLength={50}
+              placeholder="Nomor rekening/akun"
+            />
           </div>
 
           <div className="space-y-2">
@@ -106,8 +111,9 @@ export function AddAccountDialog() {
               id="balance"
               name="balance"
               type="number"
+              inputMode="numeric"
               min="0"
-              step="1000"
+              step="1"
               required
               placeholder="0"
             />

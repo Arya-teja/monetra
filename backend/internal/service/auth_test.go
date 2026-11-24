@@ -164,7 +164,7 @@ func TestLogin_ReturnsTokenForValidCredentials(t *testing.T) {
 		t.Errorf("user ID = %q, want %q", user.ID, registered.ID)
 	}
 
-	userID, err := tokens.Verify(token)
+	userID, err := tokens.Verify(token.Value)
 	if err != nil {
 		t.Fatalf("Verify() error = %v", err)
 	}

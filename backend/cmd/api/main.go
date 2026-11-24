@@ -47,9 +47,11 @@ func run() error {
 
 	tokens := service.NewTokenManager(cfg.JWTSecret, accessTokenTTL)
 	authService := service.NewAuthService(postgres.NewUserRepository(pool), tokens)
+	accountService := service.NewAccountService(postgres.NewAccountRepository(pool))
 
 	health := handler.NewHealthHandler(pool)
 	authHandler := handler.NewAuthHandler(authService)
+	accountHandler := handler.NewAccountHandler(accountService)
 	requireAuth := middleware.Auth(tokens)
 
 	mux := http.NewServeMux()
@@ -57,6 +59,10 @@ func run() error {
 	mux.HandleFunc("POST /api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
 	mux.Handle("GET /api/v1/auth/me", requireAuth(http.HandlerFunc(authHandler.Me)))
+	mux.Handle("GET /api/v1/accounts", requireAuth(http.HandlerFunc(accountHandler.List)))
+	mux.Handle("POST /api/v1/accounts", requireAuth(http.HandlerFunc(accountHandler.Create)))
+	mux.Handle("PATCH /api/v1/accounts/{id}", requireAuth(http.HandlerFunc(accountHandler.Update)))
+	mux.Handle("DELETE /api/v1/accounts/{id}", requireAuth(http.HandlerFunc(accountHandler.Delete)))
 	mux.HandleFunc("/", handler.NotFound)
 
 	srv := &http.Server{

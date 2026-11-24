@@ -19,6 +19,8 @@ func writeError(w http.ResponseWriter, err error) {
 		response.Error(w, http.StatusUnauthorized, response.CodeUnauthorized, "invalid email or password")
 	case errors.Is(err, domain.ErrEmailTaken):
 		response.Error(w, http.StatusConflict, response.CodeConflict, "email already registered")
+	case errors.Is(err, domain.ErrAccountInUse):
+		response.Error(w, http.StatusConflict, response.CodeConflict, "account has transactions; archive it instead")
 	case errors.Is(err, domain.ErrNotFound):
 		response.Error(w, http.StatusNotFound, response.CodeNotFound, "resource not found")
 	default:

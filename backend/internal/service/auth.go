@@ -91,7 +91,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (domain.Us
 }
 
 // Login checks the credentials and returns the user with a new access token.
-func (s *AuthService) Login(ctx context.Context, email, password string) (domain.User, string, error) {
+func (s *AuthService) Login(ctx context.Context, email, password string) (domain.User, AccessToken, error) {
 	email = normalizeEmail(email)
 
 	fields := map[string]string{}
@@ -102,24 +102,24 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (domain
 		fields["password"] = "is required"
 	}
 	if len(fields) > 0 {
-		return domain.User{}, "", &domain.ValidationError{Fields: fields}
+		return domain.User{}, AccessToken{}, &domain.ValidationError{Fields: fields}
 	}
 
 	user, err := s.users.FindByEmail(ctx, email)
 	if errors.Is(err, domain.ErrNotFound) {
-		return domain.User{}, "", domain.ErrInvalidCredentials
+		return domain.User{}, AccessToken{}, domain.ErrInvalidCredentials
 	}
 	if err != nil {
-		return domain.User{}, "", fmt.Errorf("find user: %w", err)
+		return domain.User{}, AccessToken{}, fmt.Errorf("find user: %w", err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return domain.User{}, "", domain.ErrInvalidCredentials
+		return domain.User{}, AccessToken{}, domain.ErrInvalidCredentials
 	}
 
 	token, err := s.tokens.Issue(user.ID)
 	if err != nil {
-		return domain.User{}, "", fmt.Errorf("issue token: %w", err)
+		return domain.User{}, AccessToken{}, fmt.Errorf("issue token: %w", err)
 	}
 	return user, token, nil
 }

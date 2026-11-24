@@ -1,126 +1,113 @@
 "use server";
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { bankAccountSchema } from "@/features/accounts/schemas";
 import { revalidatePath } from "next/cache";
-import type { BankAccountView } from "@/features/accounts/types";
+import { apiRequest, type ApiResult } from "@/lib/api";
+import { getAccessToken } from "@/lib/session";
+import {
+  createAccountSchema,
+  updateAccountSchema,
+} from "@/features/accounts/schemas";
+import type { Account } from "@/features/accounts/types";
 
-export async function getBankAccount(): Promise<BankAccountView[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return [];
-  }
+type ActionResult = { success: true } | { error: string };
 
-  // Ambil akun bank dari database menggunakan Prisma
-  const accounts = await prisma.bankAccount.findMany({
-    where: {
-      userId: session.user.id,
-    },
-  });
-
-  // Konversi balance dari Prisma Decimal ke number
-  return accounts.map((account) => ({
-    ...account,
-    balance: account.balance.toNumber(),
-  }));
+function readAccountFields(data: FormData) {
+  return {
+    name: data.get("name"),
+    type: data.get("type"),
+    institutionName: data.get("institutionName"),
+    accountNumber: data.get("accountNumber"),
+  };
 }
 
-export async function createBankAccount(data: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Kamu belum login. Silakan login terlebih dahulu.");
+function toErrorMessage(code: string): string {
+  switch (code) {
+    case "NOT_FOUND":
+      return "Akun tidak ditemukan.";
+    case "CONFLICT":
+      return "Akun ini sudah punya transaksi, jadi tidak bisa dihapus. Arsipkan saja.";
+    default:
+      return "Terjadi kesalahan. Silakan coba lagi.";
   }
-
-  // Ambil data mentah dari FormData
-  const raw = {
-    name: data.get("name"),
-    bankName: data.get("bankName"),
-    accountNumber: data.get("accountNumber"),
-    type: data.get("type"),
-    balance: data.get("balance"),
-  };
-
-  // Validasi data menggunakan Zod
-  const parsed = bankAccountSchema.safeParse(raw);
-
-  if (!parsed.success) {
-    return {
-      error: parsed.error.issues[0].message,
-    };
-  }
-
-  // Simpan data ke database menggunakan Prisma
-  await prisma.bankAccount.create({
-    data: {
-      ...parsed.data,
-      userId: session.user.id,
-    },
-  });
-
-  revalidatePath("/accounts");
-  return { success: true };
 }
 
-export async function updateBankAccount(id: string, data: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Kamu belum login. Silakan login terlebih dahulu.");
-  }
-
-  const existingAccount = await prisma.bankAccount.findUnique({
-    where: {
-      id,
-    },
+export async function getAccounts(): Promise<ApiResult<Account[]>> {
+  return apiRequest<Account[]>("/accounts?includeArchived=true", {
+    method: "GET",
+    token: await getAccessToken(),
   });
+}
 
-  if (!existingAccount || existingAccount.userId !== session.user.id) {
-    return { error: "Akun tidak ditemukan " };
-  }
-
-  const raw = {
-    name: data.get("name"),
-    bankName: data.get("bankName"),
-    accountNumber: data.get("accountNumber"),
-    type: data.get("type"),
+export async function createAccount(data: FormData): Promise<ActionResult> {
+  const parsed = createAccountSchema.safeParse({
+    ...readAccountFields(data),
     balance: data.get("balance"),
-  };
-
-  const parsed = bankAccountSchema.safeParse(raw);
-
+  });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
 
-  await prisma.bankAccount.update({
-    where: { id },
-    data: {
-      ...parsed.data,
-    },
+  const result = await apiRequest<Account>("/accounts", {
+    method: "POST",
+    body: parsed.data,
+    token: await getAccessToken(),
   });
+  if (!result.ok) {
+    return { error: toErrorMessage(result.error.code) };
+  }
+
   revalidatePath("/accounts");
   return { success: true };
 }
 
-export async function deleteBankAccount(id: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Kamu belum login. Silakan login terlebih dahulu.");
+export async function updateAccount(
+  id: string,
+  data: FormData,
+): Promise<ActionResult> {
+  const parsed = updateAccountSchema.safeParse(readAccountFields(data));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
 
-  const existingAccount = await prisma.bankAccount.findUnique({
-    where: {
-      id,
-    },
+  const result = await apiRequest<Account>(`/accounts/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: parsed.data,
+    token: await getAccessToken(),
   });
-
-  if (!existingAccount || existingAccount.userId !== session.user.id) {
-    return { error: "Akun tidak ditemukan " };
+  if (!result.ok) {
+    return { error: toErrorMessage(result.error.code) };
   }
 
-  await prisma.bankAccount.delete({
-    where: { id },
+  revalidatePath("/accounts");
+  return { success: true };
+}
+
+export async function setAccountArchived(
+  id: string,
+  isArchived: boolean,
+): Promise<ActionResult> {
+  const result = await apiRequest<Account>(`/accounts/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: { isArchived },
+    token: await getAccessToken(),
   });
+  if (!result.ok) {
+    return { error: toErrorMessage(result.error.code) };
+  }
+
+  revalidatePath("/accounts");
+  return { success: true };
+}
+
+export async function deleteAccount(id: string): Promise<ActionResult> {
+  const result = await apiRequest<void>(`/accounts/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    token: await getAccessToken(),
+  });
+  if (!result.ok) {
+    return { error: toErrorMessage(result.error.code) };
+  }
+
   revalidatePath("/accounts");
   return { success: true };
 }

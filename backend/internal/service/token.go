@@ -17,19 +17,25 @@ func NewTokenManager(secret string, ttl time.Duration) *TokenManager {
 	return &TokenManager{secret: []byte(secret), ttl: ttl}
 }
 
-func (m *TokenManager) Issue(userID string) (string, error) {
+type AccessToken struct {
+	Value     string
+	ExpiresAt time.Time
+}
+
+func (m *TokenManager) Issue(userID string) (AccessToken, error) {
 	now := time.Now()
+	expiresAt := now.Add(m.ttl)
 	claims := jwt.RegisteredClaims{
 		Subject:   userID,
 		IssuedAt:  jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(m.ttl)),
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(m.secret)
+	value, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(m.secret)
 	if err != nil {
-		return "", fmt.Errorf("sign token: %w", err)
+		return AccessToken{}, fmt.Errorf("sign token: %w", err)
 	}
-	return token, nil
+	return AccessToken{Value: value, ExpiresAt: expiresAt}, nil
 }
 
 // Verify returns the user ID of a valid, unexpired token.

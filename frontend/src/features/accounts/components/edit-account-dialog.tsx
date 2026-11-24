@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { updateBankAccount } from "../actions";
+import { updateAccount } from "../actions";
+import { accountTypeLabels, accountTypes, type Account } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,9 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
-import type { BankAccountView } from "../types";
 
-export function EditAccountDialog({ account }: { account: BankAccountView }) {
+export function EditAccountDialog({ account }: { account: Account }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,9 +31,9 @@ export function EditAccountDialog({ account }: { account: BankAccountView }) {
     setLoading(true);
     setError(null);
 
-    const result = await updateBankAccount(account.id, formData);
+    const result = await updateAccount(account.id, formData);
 
-    if (result?.error) {
+    if ("error" in result) {
       setError(result.error);
       setLoading(false);
       return;
@@ -46,14 +46,14 @@ export function EditAccountDialog({ account }: { account: BankAccountView }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" aria-label={`Edit akun ${account.name}`}>
           <PencilSimpleIcon className="size-4" />
         </Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Akun Bank</DialogTitle>
+          <DialogTitle>Edit Akun</DialogTitle>
         </DialogHeader>
 
         <form action={handleSubmit} className="space-y-4">
@@ -63,27 +63,8 @@ export function EditAccountDialog({ account }: { account: BankAccountView }) {
               id="edit-name"
               name="name"
               required
+              maxLength={50}
               defaultValue={account.name}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-bankName">Nama Bank</Label>
-            <Input
-              id="edit-bankName"
-              name="bankName"
-              required
-              defaultValue={account.bankName}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-accountNumber">Nomor Akun</Label>
-            <Input
-              id="edit-accountNumber"
-              name="accountNumber"
-              required
-              defaultValue={account.accountNumber}
             />
           </div>
 
@@ -94,24 +75,38 @@ export function EditAccountDialog({ account }: { account: BankAccountView }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="BANK">Bank</SelectItem>
-                <SelectItem value="EWALLET">E-Wallet</SelectItem>
+                {accountTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {accountTypeLabels[type]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-balance">Saldo</Label>
+            <Label htmlFor="edit-institutionName">Nama Institusi (opsional)</Label>
             <Input
-              id="edit-balance"
-              name="balance"
-              type="number"
-              min="0"
-              step="1000"
-              required
-              defaultValue={account.balance}
+              id="edit-institutionName"
+              name="institutionName"
+              maxLength={50}
+              defaultValue={account.institutionName ?? ""}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-accountNumber">Nomor Akun (opsional)</Label>
+            <Input
+              id="edit-accountNumber"
+              name="accountNumber"
+              maxLength={50}
+              defaultValue={account.accountNumber ?? ""}
+            />
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Saldo tidak bisa diubah di sini. Saldo hanya berubah lewat transaksi.
+          </p>
 
           {error && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

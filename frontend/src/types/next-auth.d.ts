@@ -4,6 +4,7 @@ import "next-auth/jwt";
 declare module "next-auth" {
   interface User {
     accessToken: string;
+    accessTokenExpiresAt: string;
   }
 
   interface Session {
@@ -15,5 +16,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     accessToken: string;
+    /** Expiry of accessToken in milliseconds since the epoch. */
+    accessTokenExpires: number;
   }
 }

@@ -6,14 +6,11 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Arya-teja/monetra/backend/internal/domain"
 	"github.com/Arya-teja/monetra/backend/internal/repository/postgres/db"
 )
-
-const uniqueViolation = "23505"
 
 type UserRepository struct {
 	pool    *pgxpool.Pool
@@ -40,8 +37,7 @@ func (r *UserRepository) CreateWithCategories(ctx context.Context, user domain.U
 		PasswordHash: user.PasswordHash,
 	})
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation {
+		if hasCode(err, codeUniqueViolation) {
 			return domain.User{}, domain.ErrEmailTaken
 		}
 		return domain.User{}, fmt.Errorf("insert user: %w", err)

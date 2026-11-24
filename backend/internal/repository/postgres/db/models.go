@@ -102,8 +102,8 @@ type Account struct {
 	UserID          string
 	Name            string
 	Type            AccountType
-	InstitutionName pgtype.Text
-	AccountNumber   pgtype.Text
+	InstitutionName *string
+	AccountNumber   *string
 	Balance         int64
 	IsArchived      bool
 	CreatedAt       time.Time
@@ -138,7 +138,7 @@ type Transaction struct {
 	Type       CashflowType
 	Amount     int64
 	OccurredAt pgtype.Date
-	Note       pgtype.Text
+	Note       *string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

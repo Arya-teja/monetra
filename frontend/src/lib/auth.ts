@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/api";
 
 type LoginResponse = {
   accessToken: string;
+  expiresAt: string;
   user: { id: string; name: string; email: string };
 };
 
@@ -33,8 +34,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const { accessToken, user } = result.data;
-        return { id: user.id, name: user.name, email: user.email, accessToken };
+        const { accessToken, expiresAt, user } = result.data;
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          accessToken,
+          accessTokenExpiresAt: expiresAt,
+        };
       },
     }),
   ],
@@ -44,6 +51,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id as string;
         token.accessToken = user.accessToken;
+        token.accessTokenExpires = Date.parse(user.accessTokenExpiresAt);
+      }
+      // End the session together with the Go token, so a rolling session
+      // never outlives the token it depends on.
+      if (Date.now() >= token.accessTokenExpires) {
+        return null;
       }
       return token;
     },
