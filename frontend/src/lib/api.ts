@@ -4,8 +4,14 @@ type ApiError = {
   details?: Record<string, string>;
 };
 
+export type PageMeta = {
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type ApiResult<T> =
-  | { ok: true; data: T }
+  | { ok: true; data: T; meta?: PageMeta }
   | { ok: false; error: ApiError };
 
 type RequestOptions = {
@@ -33,7 +39,9 @@ export async function apiRequest<T>(
       return { ok: true, data: undefined as T };
     }
     const json = await res.json();
-    return res.ok ? { ok: true, data: json.data } : { ok: false, error: json.error };
+    return res.ok
+      ? { ok: true, data: json.data, meta: json.meta }
+      : { ok: false, error: json.error };
   } catch {
     return {
       ok: false,

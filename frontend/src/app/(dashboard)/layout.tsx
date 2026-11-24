@@ -38,6 +38,9 @@ export default async function DashboardLayout({
             <Link href="/accounts" className="hover:text-foreground">
               Akun
             </Link>
+            <Link href="/settings" className="hover:text-foreground">
+              Pengaturan
+            </Link>
           </nav>
 
           <div className="flex items-center gap-4">

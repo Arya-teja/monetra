@@ -21,6 +21,12 @@ func writeError(w http.ResponseWriter, err error) {
 		response.Error(w, http.StatusConflict, response.CodeConflict, "email already registered")
 	case errors.Is(err, domain.ErrAccountInUse):
 		response.Error(w, http.StatusConflict, response.CodeConflict, "account has transactions; archive it instead")
+	case errors.Is(err, domain.ErrCategoryExists):
+		response.Error(w, http.StatusConflict, response.CodeConflict, "category already exists")
+	case errors.Is(err, domain.ErrCategoryInUse):
+		response.Error(w, http.StatusConflict, response.CodeConflict, "category is used by transactions")
+	case errors.Is(err, domain.ErrStaleData):
+		response.Error(w, http.StatusConflict, response.CodeConflict, "data was changed; reload and try again")
 	case errors.Is(err, domain.ErrNotFound):
 		response.Error(w, http.StatusNotFound, response.CodeNotFound, "resource not found")
 	default:

@@ -47,22 +47,45 @@ func run() error {
 
 	tokens := service.NewTokenManager(cfg.JWTSecret, accessTokenTTL)
 	authService := service.NewAuthService(postgres.NewUserRepository(pool), tokens)
-	accountService := service.NewAccountService(postgres.NewAccountRepository(pool))
+	accountRepo := postgres.NewAccountRepository(pool)
+	categoryRepo := postgres.NewCategoryRepository(pool)
+	accountService := service.NewAccountService(accountRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+	transactionService := service.NewTransactionService(postgres.NewTransactionRepository(pool), accountRepo, categoryRepo)
 
 	health := handler.NewHealthHandler(pool)
 	authHandler := handler.NewAuthHandler(authService)
 	accountHandler := handler.NewAccountHandler(accountService)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
 	requireAuth := middleware.Auth(tokens)
 
 	mux := http.NewServeMux()
+	protected := func(pattern string, h http.HandlerFunc) {
+		mux.Handle(pattern, requireAuth(h))
+	}
+
 	mux.HandleFunc("GET /api/v1/health", health.Check)
 	mux.HandleFunc("POST /api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
-	mux.Handle("GET /api/v1/auth/me", requireAuth(http.HandlerFunc(authHandler.Me)))
-	mux.Handle("GET /api/v1/accounts", requireAuth(http.HandlerFunc(accountHandler.List)))
-	mux.Handle("POST /api/v1/accounts", requireAuth(http.HandlerFunc(accountHandler.Create)))
-	mux.Handle("PATCH /api/v1/accounts/{id}", requireAuth(http.HandlerFunc(accountHandler.Update)))
-	mux.Handle("DELETE /api/v1/accounts/{id}", requireAuth(http.HandlerFunc(accountHandler.Delete)))
+	protected("GET /api/v1/auth/me", authHandler.Me)
+
+	protected("GET /api/v1/accounts", accountHandler.List)
+	protected("POST /api/v1/accounts", accountHandler.Create)
+	protected("PATCH /api/v1/accounts/{id}", accountHandler.Update)
+	protected("DELETE /api/v1/accounts/{id}", accountHandler.Delete)
+
+	protected("GET /api/v1/categories", categoryHandler.List)
+	protected("POST /api/v1/categories", categoryHandler.Create)
+	protected("PATCH /api/v1/categories/{id}", categoryHandler.Rename)
+	protected("DELETE /api/v1/categories/{id}", categoryHandler.Delete)
+
+	protected("GET /api/v1/transactions", transactionHandler.List)
+	protected("POST /api/v1/transactions", transactionHandler.Create)
+	protected("GET /api/v1/transactions/{id}", transactionHandler.Get)
+	protected("PATCH /api/v1/transactions/{id}", transactionHandler.Update)
+	protected("DELETE /api/v1/transactions/{id}", transactionHandler.Delete)
+
 	mux.HandleFunc("/", handler.NotFound)
 
 	srv := &http.Server{

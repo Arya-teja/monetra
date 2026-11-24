@@ -44,7 +44,7 @@ func (r *UserRepository) CreateWithCategories(ctx context.Context, user domain.U
 	}
 
 	for _, c := range categories {
-		err := q.CreateCategory(ctx, db.CreateCategoryParams{
+		_, err := q.CreateCategory(ctx, db.CreateCategoryParams{
 			UserID:    row.ID,
 			Name:      c.Name,
 			Type:      db.CashflowType(c.Type),

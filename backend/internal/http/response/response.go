@@ -22,14 +22,27 @@ type errorBody struct {
 	Details map[string]string `json:"details,omitempty"`
 }
 
+// Meta describes one page of a paginated list.
+type Meta struct {
+	Page     int   `json:"page"`
+	PageSize int   `json:"pageSize"`
+	Total    int64 `json:"total"`
+}
+
 type envelope struct {
 	Data  any        `json:"data,omitempty"`
+	Meta  *Meta      `json:"meta,omitempty"`
 	Error *errorBody `json:"error,omitempty"`
 }
 
 // JSON writes a success response: { "data": ... }.
 func JSON(w http.ResponseWriter, status int, data any) {
 	write(w, status, envelope{Data: data})
+}
+
+// Page writes a paginated success response: { "data": [...], "meta": {...} }.
+func Page(w http.ResponseWriter, data any, meta Meta) {
+	write(w, http.StatusOK, envelope{Data: data, Meta: &meta})
 }
 
 // Error writes an error response: { "error": { "code": ..., "message": ... } }.

@@ -9,9 +9,10 @@ import (
 	"context"
 )
 
-const createCategory = `-- name: CreateCategory :exec
+const createCategory = `-- name: CreateCategory :one
 INSERT INTO categories (user_id, name, type, is_default)
 VALUES ($1, $2, $3, $4)
+RETURNING id, user_id, name, type, is_default, created_at, updated_at
 `
 
 type CreateCategoryParams struct {
@@ -21,12 +22,133 @@ type CreateCategoryParams struct {
 	IsDefault bool
 }
 
-func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) error {
-	_, err := q.db.Exec(ctx, createCategory,
+func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error) {
+	row := q.db.QueryRow(ctx, createCategory,
 		arg.UserID,
 		arg.Name,
 		arg.Type,
 		arg.IsDefault,
 	)
-	return err
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Type,
+		&i.IsDefault,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const deleteCategory = `-- name: DeleteCategory :execrows
+DELETE FROM categories
+WHERE id = $1 AND user_id = $2
+`
+
+type DeleteCategoryParams struct {
+	ID     string
+	UserID string
+}
+
+func (q *Queries) DeleteCategory(ctx context.Context, arg DeleteCategoryParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteCategory, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getCategory = `-- name: GetCategory :one
+SELECT id, user_id, name, type, is_default, created_at, updated_at FROM categories
+WHERE id = $1 AND user_id = $2
+`
+
+type GetCategoryParams struct {
+	ID     string
+	UserID string
+}
+
+func (q *Queries) GetCategory(ctx context.Context, arg GetCategoryParams) (Category, error) {
+	row := q.db.QueryRow(ctx, getCategory, arg.ID, arg.UserID)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Type,
+		&i.IsDefault,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listCategories = `-- name: ListCategories :many
+SELECT id, user_id, name, type, is_default, created_at, updated_at FROM categories
+WHERE user_id = $1
+  AND ($2::cashflow_type IS NULL OR type = $2)
+ORDER BY type, name
+`
+
+type ListCategoriesParams struct {
+	UserID string
+	Type   NullCashflowType
+}
+
+func (q *Queries) ListCategories(ctx context.Context, arg ListCategoriesParams) ([]Category, error) {
+	rows, err := q.db.Query(ctx, listCategories, arg.UserID, arg.Type)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Category
+	for rows.Next() {
+		var i Category
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Type,
+			&i.IsDefault,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const renameCategory = `-- name: RenameCategory :one
+UPDATE categories
+SET name = $3, updated_at = now()
+WHERE id = $1 AND user_id = $2
+RETURNING id, user_id, name, type, is_default, created_at, updated_at
+`
+
+type RenameCategoryParams struct {
+	ID     string
+	UserID string
+	Name   string
+}
+
+func (q *Queries) RenameCategory(ctx context.Context, arg RenameCategoryParams) (Category, error) {
+	row := q.db.QueryRow(ctx, renameCategory, arg.ID, arg.UserID, arg.Name)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Type,
+		&i.IsDefault,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

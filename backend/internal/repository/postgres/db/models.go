@@ -8,8 +8,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type AccountType string
@@ -114,7 +112,7 @@ type Budget struct {
 	ID         string
 	UserID     string
 	CategoryID string
-	Month      pgtype.Date
+	Month      time.Time
 	Amount     int64
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -137,7 +135,7 @@ type Transaction struct {
 	CategoryID string
 	Type       CashflowType
 	Amount     int64
-	OccurredAt pgtype.Date
+	OccurredAt time.Time
 	Note       *string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time

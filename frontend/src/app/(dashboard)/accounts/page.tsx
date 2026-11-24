@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatRupiah } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 function maskAccountNumber(accountNumber: string) {
   if (accountNumber.length <= 4) return accountNumber;
@@ -79,8 +80,14 @@ export default async function AccountsPage() {
                       : "—"}
                   </TableCell>
                   <TableCell>{accountTypeLabels[account.type]}</TableCell>
-                  <TableCell className="text-right font-mono">
+                  <TableCell
+                    className={cn(
+                      "text-right font-mono",
+                      account.balance < 0 && "text-expense",
+                    )}
+                  >
                     {formatRupiah(account.balance)}
+                    {account.balance < 0 && <span className="sr-only"> (saldo minus)</span>}
                   </TableCell>
                   <TableCell>
                     <AccountRowActions account={account} />

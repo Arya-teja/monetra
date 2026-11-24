@@ -7,6 +7,10 @@ var (
 	ErrEmailTaken         = errors.New("email already registered")
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrAccountInUse       = errors.New("account has transactions")
+	ErrCategoryExists     = errors.New("category already exists")
+	ErrCategoryInUse      = errors.New("category is used by transactions")
+	// ErrStaleData means the record changed after it was read; the caller should reload.
+	ErrStaleData = errors.New("data was changed by another request")
 )
 
 // ValidationError lists invalid input fields with a message per field.
