@@ -23,6 +23,8 @@ func writeError(w http.ResponseWriter, err error) {
 		response.Error(w, http.StatusConflict, response.CodeConflict, "account has transactions; archive it instead")
 	case errors.Is(err, domain.ErrCategoryExists):
 		response.Error(w, http.StatusConflict, response.CodeConflict, "category already exists")
+	case errors.Is(err, domain.ErrBudgetExists):
+		response.Error(w, http.StatusConflict, response.CodeConflict, "budget already exists for this category and month")
 	case errors.Is(err, domain.ErrCategoryInUse):
 		response.Error(w, http.StatusConflict, response.CodeConflict, "category is used by transactions")
 	case errors.Is(err, domain.ErrStaleData):

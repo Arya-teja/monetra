@@ -48,6 +48,7 @@
   --radius-4xl: calc(var(--radius) * 2.6);
   --color-income: var(--income);
   --color-expense: var(--expense);
+  --color-warning: var(--warning);
 }
 
 :root {
@@ -66,9 +67,10 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  /* PRD §9: income #5F7A4E, expense #B5654A */
+  /* PRD §9: income #5F7A4E, expense #B5654A, warning #C9A24A */
   --income: #5f7a4e;
   --expense: #b5654a;
+  --warning: #c9a24a;
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);

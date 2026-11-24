@@ -8,8 +8,10 @@ import type {
   Transaction,
   TransactionFilters,
 } from "@/features/transactions/types";
+import type { Budget } from "@/features/budgets/types";
 
 type ActionResult = { success: true } | { error: string };
+type SaveResult = { success: true; budgetWarning?: string } | { error: string };
 
 function readTransactionFields(data: FormData) {
   return {
@@ -38,10 +40,27 @@ function toErrorMessage(error: { code: string; details?: Record<string, string> 
   }
 }
 
-// Balances change with every transaction, so both pages must refresh.
+// Balances and budget spending change with every transaction, so these pages must refresh.
 function revalidateTransactionPages() {
   revalidatePath("/transactions");
   revalidatePath("/accounts");
+  revalidatePath("/budgets");
+}
+
+// Returns a warning when an expense pushes its category budget to 80% or more (PRD F5).
+async function budgetWarning(t: Transaction, token: string): Promise<string | undefined> {
+  if (t.type !== "expense") return undefined;
+
+  const result = await apiRequest<Budget[]>(`/budgets?month=${t.occurredAt.slice(0, 7)}`, {
+    method: "GET",
+    token,
+  });
+  const budget = result.ok ? result.data.find((b) => b.categoryId === t.categoryId) : undefined;
+  if (!budget || budget.status === "safe") return undefined;
+
+  return budget.status === "over"
+    ? `Budget ${budget.categoryName} sudah terlampaui (${budget.percentage}%).`
+    : `Budget ${budget.categoryName} sudah terpakai ${budget.percentage}%.`;
 }
 
 export async function getTransactions(
@@ -59,45 +78,47 @@ export async function getTransactions(
   });
 }
 
-export async function createTransaction(data: FormData): Promise<ActionResult> {
+export async function createTransaction(data: FormData): Promise<SaveResult> {
   const parsed = transactionSchema.safeParse(readTransactionFields(data));
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
 
+  const token = await getAccessToken();
   const result = await apiRequest<Transaction>("/transactions", {
     method: "POST",
     body: parsed.data,
-    token: await getAccessToken(),
+    token,
   });
   if (!result.ok) {
     return { error: toErrorMessage(result.error) };
   }
 
   revalidateTransactionPages();
-  return { success: true };
+  return { success: true, budgetWarning: await budgetWarning(result.data, token) };
 }
 
 export async function updateTransaction(
   id: string,
   data: FormData,
-): Promise<ActionResult> {
+): Promise<SaveResult> {
   const parsed = transactionSchema.safeParse(readTransactionFields(data));
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
 
+  const token = await getAccessToken();
   const result = await apiRequest<Transaction>(`/transactions/${encodeURIComponent(id)}`, {
     method: "PATCH",
     body: parsed.data,
-    token: await getAccessToken(),
+    token,
   });
   if (!result.ok) {
     return { error: toErrorMessage(result.error) };
   }
 
   revalidateTransactionPages();
-  return { success: true };
+  return { success: true, budgetWarning: await budgetWarning(result.data, token) };
 }
 
 export async function deleteTransaction(id: string): Promise<ActionResult> {

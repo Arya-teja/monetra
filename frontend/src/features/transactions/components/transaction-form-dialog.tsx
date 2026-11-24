@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { createTransaction, updateTransaction } from "../actions";
 import type { Transaction } from "../types";
 import { createCategory } from "@/features/categories/actions";
@@ -99,6 +100,9 @@ export function TransactionFormDialog({ accounts, categories, transaction }: Pro
       return;
     }
     setOpen(false);
+    if (result.budgetWarning) {
+      toast.warning(result.budgetWarning);
+    }
   }
 
   return (
@@ -140,7 +144,7 @@ export function TransactionFormDialog({ accounts, categories, transaction }: Pro
                   <label
                     key={t}
                     className={cn(
-                      "flex h-11 cursor-pointer items-center justify-center rounded-md text-sm font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                      "flex h-11 cursor-pointer items-center justify-center rounded-md text-sm font-medium has-focus-visible:ring-2 has-focus-visible:ring-ring",
                       type === t ? "bg-background shadow-sm" : "text-muted-foreground",
                     )}
                   >

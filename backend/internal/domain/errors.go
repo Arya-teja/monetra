@@ -9,6 +9,7 @@ var (
 	ErrAccountInUse       = errors.New("account has transactions")
 	ErrCategoryExists     = errors.New("category already exists")
 	ErrCategoryInUse      = errors.New("category is used by transactions")
+	ErrBudgetExists       = errors.New("budget already exists for this category and month")
 	// ErrStaleData means the record changed after it was read; the caller should reload.
 	ErrStaleData = errors.New("data was changed by another request")
 )

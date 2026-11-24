@@ -52,12 +52,14 @@ func run() error {
 	accountService := service.NewAccountService(accountRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
 	transactionService := service.NewTransactionService(postgres.NewTransactionRepository(pool), accountRepo, categoryRepo)
+	budgetService := service.NewBudgetService(postgres.NewBudgetRepository(pool), categoryRepo)
 
 	health := handler.NewHealthHandler(pool)
 	authHandler := handler.NewAuthHandler(authService)
 	accountHandler := handler.NewAccountHandler(accountService)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
+	budgetHandler := handler.NewBudgetHandler(budgetService)
 	requireAuth := middleware.Auth(tokens)
 
 	mux := http.NewServeMux()
@@ -85,6 +87,12 @@ func run() error {
 	protected("GET /api/v1/transactions/{id}", transactionHandler.Get)
 	protected("PATCH /api/v1/transactions/{id}", transactionHandler.Update)
 	protected("DELETE /api/v1/transactions/{id}", transactionHandler.Delete)
+
+	protected("GET /api/v1/budgets", budgetHandler.List)
+	protected("POST /api/v1/budgets", budgetHandler.Create)
+	protected("POST /api/v1/budgets/copy", budgetHandler.Copy)
+	protected("PATCH /api/v1/budgets/{id}", budgetHandler.Update)
+	protected("DELETE /api/v1/budgets/{id}", budgetHandler.Delete)
 
 	mux.HandleFunc("/", handler.NotFound)
 

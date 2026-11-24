@@ -1,6 +1,7 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
@@ -35,6 +36,9 @@ export default async function DashboardLayout({
             >
               Transaksi
             </Link>
+            <Link href="/budgets" className="hover:text-foreground">
+              Budget
+            </Link>
             <Link href="/accounts" className="hover:text-foreground">
               Akun
             </Link>
@@ -62,6 +66,7 @@ export default async function DashboardLayout({
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <Toaster richColors position="top-center" />
     </div>
   );
 }
