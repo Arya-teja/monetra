@@ -15,6 +15,7 @@ import type { Account } from "@/features/accounts/types";
 import { todayInJakarta } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/form-error";
 import { Input } from "@/components/ui/input";
 import { RupiahInput } from "@/components/rupiah-input";
 import { Label } from "@/components/ui/label";
@@ -247,11 +248,7 @@ export function TransactionFormDialog({ accounts, categories, transaction, trigg
               />
             </div>
 
-            {error && (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            )}
+            <FormError message={error} />
 
             <Button type="submit" disabled={loading} className="h-11 w-full">
               {loading ? "Menyimpan..." : "Simpan"}

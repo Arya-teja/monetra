@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { deleteCategory, renameCategory } from "../actions";
+import { useFormDialog } from "@/hooks/use-form-dialog";
 import type { Category } from "../types";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,28 +18,17 @@ import {
 import { PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 
 export function CategoryRowActions({ category }: { category: Category }) {
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleRename(formData: FormData) {
-    setLoading(true);
-    setError(null);
-    const result = await renameCategory(category.id, formData);
-    setLoading(false);
-    if ("error" in result) {
-      setError(result.error);
-      return;
-    }
-    setOpen(false);
-  }
+  const { open, onOpenChange, error, loading, handleSubmit } = useFormDialog((formData) =>
+    renameCategory(category.id, formData),
+  );
+  const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
     if (!window.confirm(`Hapus kategori "${category.name}"?`)) return;
 
-    setLoading(true);
+    setDeleting(true);
     const result = await deleteCategory(category.id);
-    setLoading(false);
+    setDeleting(false);
     if ("error" in result) {
       window.alert(result.error);
     }
@@ -45,13 +36,7 @@ export function CategoryRowActions({ category }: { category: Category }) {
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <Dialog
-        open={open}
-        onOpenChange={(value) => {
-          setOpen(value);
-          if (!value) setError(null);
-        }}
-      >
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogTrigger asChild>
           <Button variant="ghost" size="icon" aria-label={`Ubah nama ${category.name}`}>
             <PencilSimpleIcon className="size-4" />
@@ -61,7 +46,7 @@ export function CategoryRowActions({ category }: { category: Category }) {
           <DialogHeader>
             <DialogTitle>Ubah Nama Kategori</DialogTitle>
           </DialogHeader>
-          <form action={handleRename} className="space-y-4">
+          <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor={`category-name-${category.id}`}>Nama Kategori</Label>
               <Input
@@ -72,11 +57,7 @@ export function CategoryRowActions({ category }: { category: Category }) {
                 defaultValue={category.name}
               />
             </div>
-            {error && (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            )}
+            <FormError message={error} />
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Menyimpan..." : "Simpan"}
             </Button>
@@ -88,7 +69,7 @@ export function CategoryRowActions({ category }: { category: Category }) {
         variant="ghost"
         size="icon"
         onClick={handleDelete}
-        disabled={loading}
+        disabled={deleting}
         aria-label={`Hapus kategori ${category.name}`}
       >
         <TrashIcon className="size-4 text-destructive" />

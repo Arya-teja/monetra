@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { createBudget } from "../actions";
+import { useFormDialog } from "@/hooks/use-form-dialog";
 import type { Category } from "@/features/categories/types";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/form-error";
 import { RupiahInput } from "@/components/rupiah-input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,30 +30,10 @@ type Props = {
 };
 
 export function AddBudgetDialog({ month, categories }: Props) {
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(formData: FormData) {
-    setLoading(true);
-    setError(null);
-    const result = await createBudget(formData);
-    setLoading(false);
-    if ("error" in result) {
-      setError(result.error);
-      return;
-    }
-    setOpen(false);
-  }
+  const { open, onOpenChange, error, loading, handleSubmit } = useFormDialog(createBudget);
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(value) => {
-        setOpen(value);
-        if (!value) setError(null);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm" disabled={categories.length === 0}>
           <PlusIcon className="mr-1 size-4" />
@@ -89,11 +70,7 @@ export function AddBudgetDialog({ month, categories }: Props) {
             <RupiahInput id="budget-amount" name="amount" required placeholder="0" />
           </div>
 
-          {error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
+          <FormError message={error} />
 
           <Button type="submit" disabled={loading} className="h-11 w-full">
             {loading ? "Menyimpan..." : "Simpan"}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { updateAccount } from "../actions";
+import { useFormDialog } from "@/hooks/use-form-dialog";
 import { accountTypeLabels, accountTypes, type Account } from "../types";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,28 +24,12 @@ import {
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 
 export function EditAccountDialog({ account }: { account: Account }) {
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(formData: FormData) {
-    setLoading(true);
-    setError(null);
-
-    const result = await updateAccount(account.id, formData);
-
-    if ("error" in result) {
-      setError(result.error);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    setOpen(false);
-  }
+  const { open, onOpenChange, error, loading, handleSubmit } = useFormDialog((formData) =>
+    updateAccount(account.id, formData),
+  );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" aria-label={`Edit akun ${account.name}`}>
           <PencilSimpleIcon className="size-4" />
@@ -108,11 +93,7 @@ export function EditAccountDialog({ account }: { account: Account }) {
             Saldo tidak bisa diubah di sini. Saldo hanya berubah lewat transaksi.
           </p>
 
-          {error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
+          <FormError message={error} />
 
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Menyimpan..." : "Simpan Perubahan"}

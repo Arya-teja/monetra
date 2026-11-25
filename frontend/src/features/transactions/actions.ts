@@ -78,28 +78,11 @@ export async function getTransactions(
   });
 }
 
-export async function createTransaction(data: FormData): Promise<SaveResult> {
-  const parsed = transactionSchema.safeParse(readTransactionFields(data));
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
-  }
-
-  const token = await getAccessToken();
-  const result = await apiRequest<Transaction>("/transactions", {
-    method: "POST",
-    body: parsed.data,
-    token,
-  });
-  if (!result.ok) {
-    return { error: toErrorMessage(result.error) };
-  }
-
-  revalidateTransactionPages();
-  return { success: true, budgetWarning: await budgetWarning(result.data, token) };
-}
-
-export async function updateTransaction(
-  id: string,
+// Shared by create and update: validate, save through the API, then refresh pages and
+// check whether the saved expense pushed its budget to a warning.
+async function saveTransaction(
+  path: string,
+  method: "POST" | "PATCH",
   data: FormData,
 ): Promise<SaveResult> {
   const parsed = transactionSchema.safeParse(readTransactionFields(data));
@@ -108,17 +91,21 @@ export async function updateTransaction(
   }
 
   const token = await getAccessToken();
-  const result = await apiRequest<Transaction>(`/transactions/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    body: parsed.data,
-    token,
-  });
+  const result = await apiRequest<Transaction>(path, { method, body: parsed.data, token });
   if (!result.ok) {
     return { error: toErrorMessage(result.error) };
   }
 
   revalidateTransactionPages();
   return { success: true, budgetWarning: await budgetWarning(result.data, token) };
+}
+
+export async function createTransaction(data: FormData): Promise<SaveResult> {
+  return saveTransaction("/transactions", "POST", data);
+}
+
+export async function updateTransaction(id: string, data: FormData): Promise<SaveResult> {
+  return saveTransaction(`/transactions/${encodeURIComponent(id)}`, "PATCH", data);
 }
 
 export async function deleteTransaction(id: string): Promise<ActionResult> {

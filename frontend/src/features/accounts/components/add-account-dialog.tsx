@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { createAccount } from "../actions";
+import { useFormDialog } from "@/hooks/use-form-dialog";
 import { accountTypeLabels, accountTypes } from "../types";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/form-error";
 import { Input } from "@/components/ui/input";
 import { RupiahInput } from "@/components/rupiah-input";
 import { Label } from "@/components/ui/label";
@@ -24,28 +25,10 @@ import {
 import { PlusIcon } from "@phosphor-icons/react";
 
 export function AddAccountDialog() {
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(formData: FormData) {
-    setLoading(true);
-    setError(null);
-
-    const result = await createAccount(formData);
-
-    if ("error" in result) {
-      setError(result.error);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    setOpen(false);
-  }
+  const { open, onOpenChange, error, loading, handleSubmit } = useFormDialog(createAccount);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">
           <PlusIcon className="mr-1 size-4" />
@@ -112,11 +95,7 @@ export function AddAccountDialog() {
             <p className="text-xs text-muted-foreground">Kosongkan kalau saldonya Rp0.</p>
           </div>
 
-          {error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
+          <FormError message={error} />
 
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Menyimpan..." : "Simpan"}
