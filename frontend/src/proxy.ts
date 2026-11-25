@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-// Halaman yang boleh diakses tanpa login. Selain ini, semua wajib login.
+// Pages reachable without logging in. Every other page requires a session.
 const publicPaths = ["/", "/login", "/register"];
 const authPages = ["/login", "/register"];
 
@@ -12,12 +12,12 @@ export const proxy = auth((req) => {
   const isPublic = publicPaths.includes(pathname);
   const isAuthPage = authPages.includes(pathname);
 
-  // Belum login dan bukan halaman publik → redirect ke login
+  // Not logged in and not a public page → send to login
   if (!isLoggedIn && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Sudah login tapi buka halaman login/register → redirect ke dashboard
+  // Already logged in but opening login/register → send to the dashboard
   if (isLoggedIn && isAuthPage) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
@@ -26,6 +26,7 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  // Jalankan di semua path, kecuali API, aset Next.js, dan file statis (yang ada titiknya)
-  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
+  // Run on every path except the API, Next.js assets, PWA icons (they must load
+  // before login), and static files (paths containing a dot)
+  matcher: ["/((?!api|_next/static|_next/image|icon|apple-icon|.*\\..*).*)"],
 };
