@@ -45,6 +45,29 @@ test("money inputs show thousand separators while typing", async ({ page }) => {
   await expect(amount).toHaveValue("150.000");
 });
 
+test("a refused transaction keeps what the user typed", async ({ page }) => {
+  const email = uniqueEmail("refused");
+  const token = await createUser(email);
+  await createAccount(token, "BSI", 1_000_000);
+  await login(page, email);
+
+  await page.getByRole("button", { name: "Tambah transaksi" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Nominal").fill("250000");
+  await dialog.getByLabel("Catatan (opsional)").fill("Makan siang");
+  // No category chosen: the form is refused with a message.
+  await dialog.getByRole("button", { name: "Simpan" }).click();
+  await expect(dialog.getByText("Kategori harus dipilih")).toBeVisible();
+  await expect(dialog.getByLabel("Nominal")).toHaveValue("250.000");
+  await expect(dialog.getByLabel("Catatan (opsional)")).toHaveValue("Makan siang");
+
+  // Choosing the category is enough to save it.
+  await chooseOption(page, "Kategori", "Belanja");
+  await dialog.getByRole("button", { name: "Simpan" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText(rupiah(750_000)).first()).toBeVisible();
+});
+
 test("an expense added from the dashboard updates the dashboard and the account balance", async ({ page }) => {
   const email = uniqueEmail("expense");
   const token = await createUser(email);

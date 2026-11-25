@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type SubmitEvent } from "react";
 
 type SubmitResult = { error: string } | { success: true };
 
@@ -16,7 +16,11 @@ export function useFormDialog(submit: (formData: FormData) => Promise<SubmitResu
     if (!value) setError(null);
   }
 
-  async function handleSubmit(formData: FormData) {
+  // Used as onSubmit, not a form action: React resets a form after its action runs,
+  // which would clear what the user typed whenever the submit fails.
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     setLoading(true);
     setError(null);
     const result = await submit(formData);

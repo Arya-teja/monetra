@@ -46,7 +46,7 @@ export function CategoryRowActions({ category }: { category: Category }) {
           <DialogHeader>
             <DialogTitle>Ubah Nama Kategori</DialogTitle>
           </DialogHeader>
-          <form action={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor={`category-name-${category.id}`}>Nama Kategori</Label>
               <Input

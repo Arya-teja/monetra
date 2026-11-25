@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 import { createTransaction, updateTransaction } from "../actions";
 import type { Transaction } from "../types";
@@ -91,7 +91,11 @@ export function TransactionFormDialog({ accounts, categories, transaction, trigg
     setNewCategoryName(null);
   }
 
-  async function handleSubmit(formData: FormData) {
+  // Used as onSubmit, not a form action: React resets a form after its action runs,
+  // which would clear what the user typed whenever the submit fails.
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     setLoading(true);
     setError(null);
     const result = transaction
@@ -128,7 +132,7 @@ export function TransactionFormDialog({ accounts, categories, transaction, trigg
             Kamu belum punya akun aktif. Tambahkan akun dulu di halaman Akun.
           </p>
         ) : (
-          <form action={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset>
               <legend className="sr-only">Tipe transaksi</legend>
               <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">

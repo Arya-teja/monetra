@@ -41,7 +41,7 @@ export function AddAccountDialog() {
           <DialogTitle>Tambah Akun</DialogTitle>
         </DialogHeader>
 
-        <form action={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nama Akun</Label>
             <Input

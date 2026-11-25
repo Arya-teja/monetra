@@ -46,7 +46,7 @@ export function BudgetRowActions({ budget }: { budget: Budget }) {
           <DialogHeader>
             <DialogTitle>Ubah Budget {budget.categoryName}</DialogTitle>
           </DialogHeader>
-          <form action={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor={`budget-amount-${budget.id}`}>Nominal Budget</Label>
               <RupiahInput

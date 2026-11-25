@@ -46,7 +46,7 @@ export function AddBudgetDialog({ month, categories }: Props) {
           <DialogTitle>Tambah Budget</DialogTitle>
         </DialogHeader>
 
-        <form action={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input type="hidden" name="month" value={month} />
 
           <div className="space-y-2">
