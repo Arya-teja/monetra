@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/Arya-teja/monetra/backend/internal/domain"
 )
@@ -32,7 +31,7 @@ func NewBudgetService(budgets domain.BudgetRepository, categories domain.Categor
 
 // List returns the budgets of a month (YYYY-MM) with their spending status.
 func (s *BudgetService) List(ctx context.Context, userID, month string) ([]BudgetSummary, error) {
-	start, err := parseMonth(month)
+	start, err := requireMonth(month)
 	if err != nil {
 		return nil, err
 	}
@@ -51,10 +50,7 @@ func (s *BudgetService) List(ctx context.Context, userID, month string) ([]Budge
 
 func (s *BudgetService) Create(ctx context.Context, userID, categoryID, month string, amount int64) (BudgetSummary, error) {
 	fields := map[string]string{}
-	start, err := time.Parse(monthLayout, month)
-	if err != nil {
-		fields["month"] = "must be YYYY-MM"
-	}
+	start, _ := parseMonth(month, fields)
 	if amount <= 0 {
 		fields["amount"] = "must be greater than 0"
 	}
@@ -106,7 +102,7 @@ func (s *BudgetService) Delete(ctx context.Context, userID, id string) error {
 // CopyFromPreviousMonth copies last month's budgets into month (YYYY-MM) and returns
 // how many were created. Categories that already have a budget in month are kept.
 func (s *BudgetService) CopyFromPreviousMonth(ctx context.Context, userID, month string) (int64, error) {
-	start, err := parseMonth(month)
+	start, err := requireMonth(month)
 	if err != nil {
 		return 0, err
 	}
@@ -136,13 +132,4 @@ func budgetStatus(spent, amount int64) domain.BudgetStatus {
 	default:
 		return domain.BudgetSafe
 	}
-}
-
-// parseMonth turns "YYYY-MM" into the first day of that month.
-func parseMonth(month string) (time.Time, error) {
-	start, err := time.Parse(monthLayout, month)
-	if err != nil {
-		return time.Time{}, &domain.ValidationError{Fields: map[string]string{"month": "must be YYYY-MM"}}
-	}
-	return start, nil
 }

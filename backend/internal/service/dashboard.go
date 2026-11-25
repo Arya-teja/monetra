@@ -54,7 +54,7 @@ func (s *DashboardService) Summary(ctx context.Context, userID, month string) (D
 	start := s.currentMonth()
 	if month != "" {
 		var err error
-		if start, err = parseMonth(month); err != nil {
+		if start, err = requireMonth(month); err != nil {
 			return DashboardSummary{}, err
 		}
 	}

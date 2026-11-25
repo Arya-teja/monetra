@@ -5,15 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/Arya-teja/monetra/backend/internal/domain"
 )
 
 const (
-	dateLayout         = "2006-01-02"
-	monthLayout        = "2006-01"
 	maxNoteLength      = 200
 	defaultPageSize    = 20
 	maxPageSize        = 100
@@ -76,10 +73,7 @@ func (s *TransactionService) List(ctx context.Context, userID string, in ListTra
 	fields := map[string]string{}
 
 	if in.Month != "" {
-		from, err := time.Parse(monthLayout, in.Month)
-		if err != nil {
-			fields["month"] = "must be YYYY-MM"
-		} else {
+		if from, ok := parseMonth(in.Month, fields); ok {
 			to := from.AddDate(0, 1, 0)
 			filter.From, filter.To = &from, &to
 		}
@@ -304,14 +298,6 @@ func validateTransaction(t domain.Transaction, fields map[string]string) {
 	if t.Note != nil && utf8.RuneCountInString(*t.Note) > maxNoteLength {
 		fields["note"] = fmt.Sprintf("must be at most %d characters", maxNoteLength)
 	}
-}
-
-func parseDate(value string, fields map[string]string) time.Time {
-	date, err := time.Parse(dateLayout, strings.TrimSpace(value))
-	if err != nil {
-		fields["occurredAt"] = "must be a date in YYYY-MM-DD format"
-	}
-	return date
 }
 
 // isUUID reports whether s has the canonical 8-4-4-4-12 hexadecimal UUID form.

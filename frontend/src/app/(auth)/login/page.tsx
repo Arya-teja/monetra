@@ -29,7 +29,6 @@ export default function LoginPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    // panggil fungsi signIn dari next-auth untuk melakukan login
     const result = await signIn("credentials", {
       email,
       password,
@@ -52,7 +51,7 @@ export default function LoginPage() {
 <main className="min-h-screen bg-background px-4 py-5 text-foreground sm:px-6 lg:px-10 lg:py-8">
       <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl overflow-hidden rounded-2xl border bg-background shadow-lg lg:grid-cols-[1.05fr_0.95fr]">
 
-      {/* Bagian kiri halaman login */}
+      {/* Left: brand panel */}
         <section className="relative flex flex-col justify-between overflow-hidden bg-primary p-7 text-primary-foreground lg:min-h-105 sm:p-10 lg:p-12">
           <div className="absolute -right-24 -top-24 size-72 rounded-full border border-primary-foreground/20" />
           <div className="absolute -right-8 top-8 size-40 rounded-full border border-primary-foreground/15" />
@@ -81,7 +80,7 @@ export default function LoginPage() {
           </div>
         </section>
 
-        {/* Bagian kanan halaman login */}
+        {/* Right: login form */}
         <section className="flex items-center bg-background px-6 py-10 sm:px-12 lg:px-16">
           <Card className="w-full border-0 bg-transparent py-0 ring-0">
             <CardHeader className="px-0 pb-7">
