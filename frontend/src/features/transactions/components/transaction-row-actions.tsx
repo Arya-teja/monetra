@@ -7,7 +7,7 @@ import { TransactionFormDialog } from "./transaction-form-dialog";
 import type { Account } from "@/features/accounts/types";
 import type { Category } from "@/features/categories/types";
 import { Button } from "@/components/ui/button";
-import { TrashIcon } from "@phosphor-icons/react";
+import { PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 
 type Props = {
   transaction: Transaction;
@@ -35,6 +35,11 @@ export function TransactionRowActions({ transaction, accounts, categories }: Pro
         transaction={transaction}
         accounts={accounts}
         categories={categories}
+        trigger={
+          <Button variant="ghost" size="icon" aria-label="Edit transaksi">
+            <PencilSimpleIcon className="size-5" />
+          </Button>
+        }
       />
       <Button
         variant="ghost"

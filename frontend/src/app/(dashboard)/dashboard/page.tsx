@@ -111,7 +111,7 @@ export default async function DashboardPage() {
                 </div>
                 <p
                   className={cn(
-                    "font-mono font-semibold tabular-nums",
+                    "font-semibold tabular-nums",
                     t.type === "income" ? "text-income" : "text-expense",
                   )}
                 >

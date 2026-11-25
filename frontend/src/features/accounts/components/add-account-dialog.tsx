@@ -5,6 +5,7 @@ import { createAccount } from "../actions";
 import { accountTypeLabels, accountTypes } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RupiahInput } from "@/components/rupiah-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -107,16 +108,8 @@ export function AddAccountDialog() {
 
           <div className="space-y-2">
             <Label htmlFor="balance">Saldo Awal</Label>
-            <Input
-              id="balance"
-              name="balance"
-              type="number"
-              inputMode="numeric"
-              min="0"
-              step="1"
-              required
-              placeholder="0"
-            />
+            <RupiahInput id="balance" name="balance" placeholder="0" />
+            <p className="text-xs text-muted-foreground">Kosongkan kalau saldonya Rp0.</p>
           </div>
 
           {error && (

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { deleteBudget, updateBudgetAmount } from "../actions";
 import type { Budget } from "../types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { RupiahInput } from "@/components/rupiah-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -63,14 +63,10 @@ export function BudgetRowActions({ budget }: { budget: Budget }) {
           </DialogHeader>
           <form action={handleUpdate} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor={`budget-amount-${budget.id}`}>Nominal Budget (Rp)</Label>
-              <Input
+              <Label htmlFor={`budget-amount-${budget.id}`}>Nominal Budget</Label>
+              <RupiahInput
                 id={`budget-amount-${budget.id}`}
                 name="amount"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                step="1"
                 required
                 defaultValue={budget.amount}
               />

@@ -3,7 +3,6 @@ import { getAccounts } from "@/features/accounts/actions";
 import { getCategories } from "@/features/categories/actions";
 import { cashflowTypes, type CashflowType } from "@/features/categories/types";
 import { getTransactions } from "@/features/transactions/actions";
-import { TransactionFormDialog } from "@/features/transactions/components/transaction-form-dialog";
 import { TransactionRowActions } from "@/features/transactions/components/transaction-row-actions";
 import {
   ALL,
@@ -70,14 +69,11 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Transaksi</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Catat dan telusuri pemasukan serta pengeluaran kamu.
-          </p>
-        </div>
-        <TransactionFormDialog accounts={accounts} categories={categories} />
+      <div>
+        <h1 className="font-heading text-2xl font-semibold">Transaksi</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Catat dan telusuri pemasukan serta pengeluaran kamu.
+        </p>
       </div>
 
       <TransactionFilters filters={filters} accounts={accounts} categories={categories} />
@@ -109,7 +105,7 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
                     </div>
                     <p
                       className={cn(
-                        "font-mono font-semibold tabular-nums",
+                        "font-semibold tabular-nums",
                         t.type === "income" ? "text-income" : "text-expense",
                       )}
                     >

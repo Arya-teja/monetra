@@ -1,6 +1,12 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { apiRequest } from "@/lib/api";
+import { API_UNAVAILABLE } from "@/lib/auth-errors";
+
+// Lets the login page tell "wrong password" apart from "the Go API could not be reached".
+class ApiUnavailableError extends CredentialsSignin {
+  code = API_UNAVAILABLE;
+}
 
 type LoginResponse = {
   accessToken: string;
@@ -31,7 +37,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           body: { email: credentials?.email, password: credentials?.password },
         });
         if (!result.ok) {
-          return null;
+          // Wrong credentials (401) or empty fields (400): a normal failed login.
+          if (result.error.code === "UNAUTHORIZED" || result.error.code === "VALIDATION_ERROR") {
+            return null;
+          }
+          throw new ApiUnavailableError();
         }
 
         const { accessToken, expiresAt, user } = result.data;
@@ -53,9 +63,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.accessToken = user.accessToken;
         token.accessTokenExpires = Date.parse(user.accessTokenExpiresAt);
       }
-      // End the session together with the Go token, so a rolling session
-      // never outlives the token it depends on.
-      if (Date.now() >= token.accessTokenExpires) {
+      // A session is only valid with an unexpired Go token. Ending it here (instead of
+      // in each page) keeps proxy.ts and the pages in agreement: sessions created before
+      // the Go API existed, or whose token expired, are dropped everywhere at once.
+      // Otherwise proxy.ts would treat them as logged in while pages send them to /login.
+      if (
+        !token.accessToken ||
+        !Number.isFinite(token.accessTokenExpires) ||
+        Date.now() >= token.accessTokenExpires
+      ) {
         return null;
       }
       return token;

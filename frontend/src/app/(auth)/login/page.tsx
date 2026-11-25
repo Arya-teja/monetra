@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { API_UNAVAILABLE } from "@/lib/auth-errors";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,7 +36,11 @@ export default function LoginPage() {
       redirect: false,
     });
     if (result?.error) {
-      setError("Email atau password salah");
+      setError(
+        result.code === API_UNAVAILABLE
+          ? "Server tidak dapat dihubungi. Coba lagi beberapa saat lagi."
+          : "Email atau password salah",
+      );
       setLoading(false);
       return;
     }
@@ -45,30 +50,30 @@ export default function LoginPage() {
 
   return (
 <main className="min-h-screen bg-background px-4 py-5 text-foreground sm:px-6 lg:px-10 lg:py-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl overflow-hidden border border-black/10 bg-background shadow-[0_20px_60px_rgba(22,48,42,0.08)] lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl overflow-hidden rounded-2xl border bg-background shadow-lg lg:grid-cols-[1.05fr_0.95fr]">
 
       {/* Bagian kiri halaman login */}
-        <section className="relative flex min-h-105 flex-col justify-between overflow-hidden bg-primary p-7 text-[#f4f7f5] sm:p-10 lg:p-12">
-          <div className="absolute -right-24 -top-24 size-72 rounded-full border border-[#c7dfd2]/20" />
-          <div className="absolute -right-8 top-8 size-40 rounded-full border border-[#c7dfd2]/15" />
+        <section className="relative flex flex-col justify-between overflow-hidden bg-primary p-7 text-primary-foreground lg:min-h-105 sm:p-10 lg:p-12">
+          <div className="absolute -right-24 -top-24 size-72 rounded-full border border-primary-foreground/20" />
+          <div className="absolute -right-8 top-8 size-40 rounded-full border border-primary-foreground/15" />
 
           <div className="relative z-10">
             <div className="flex items-center gap-3">
-              <div className="grid size-9 place-items-center bg-[#d8f36b] text-sm font-black text-[#163a35]">
+              <div className="grid size-9 place-items-center rounded-lg bg-background text-sm font-black text-primary">
                 M
               </div>
               <span className="font-heading text-lg font-semibold tracking-tight">
                 monetra
               </span>
             </div>
-            <div className="mt-20 max-w-md sm:mt-24">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#d8f36b]">
+            <div className="mt-8 max-w-md lg:mt-24">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground">
                 Your money, in focus
               </p>
-              <h1 className="font-heading text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
+              <h1 className="font-heading text-3xl font-semibold leading-[1.05] tracking-tight lg:text-5xl">
                 Make every rupiah tell a better story.
               </h1>
-              <p className="mt-5 max-w-sm text-sm leading-6 text-[#c7dfd2]/75">
+              <p className="mt-5 max-w-sm text-sm leading-6 text-primary-foreground/90">
                 Satu tempat untuk memahami kebiasaan belanja, merencanakan
                 tujuan, dan menjaga uang tetap bergerak ke arah yang benar.
               </p>
@@ -130,7 +135,7 @@ export default function LoginPage() {
                 </Button>
               </form>
             </CardContent>
-            <CardFooter className="mt-7 justify-center border-t border-black/10 px-0 pt-6 gap-x-0.5 text-sm text-muted-foreground">
+            <CardFooter className="mt-7 justify-center border-t px-0 pt-6 gap-x-0.5 text-sm text-muted-foreground">
               Belum punya akun?{" "}
               <Link
                 href="/register"

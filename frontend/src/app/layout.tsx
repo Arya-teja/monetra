@@ -1,20 +1,9 @@
-import type { Metadata } from "next";
-import { Geist, JetBrains_Mono, Outfit } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
@@ -23,18 +12,15 @@ export const metadata: Metadata = {
   description: "Kelola keuangan pribadi dan keluarga",
 };
 
+// viewport-fit=cover lets the layout draw under the iPhone notch; the app adds safe-area padding itself.
+export const viewport: Viewport = {
+  viewportFit: "cover",
+  themeColor: "#f7f2eb",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="id"
-      className={cn(
-        "h-full",
-        "antialiased",
-        geistSans.variable,
-        jetbrainsMono.variable,
-        outfit.variable
-      )}
-    >
+    <html lang="id" className={`h-full antialiased ${jakarta.variable}`}>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

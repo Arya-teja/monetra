@@ -16,6 +16,7 @@ import { todayInJakarta } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RupiahInput } from "@/components/rupiah-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -31,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PencilSimpleIcon, PlusIcon } from "@phosphor-icons/react";
 
 const ADD_CATEGORY = "__add_category__";
 
@@ -40,9 +40,11 @@ type Props = {
   categories: Category[];
   /** When set, the dialog edits this transaction; otherwise it creates one. */
   transaction?: Transaction;
+  /** Element that opens the dialog, e.g. the (+) button of the navigation. */
+  trigger: React.ReactNode;
 };
 
-export function TransactionFormDialog({ accounts, categories, transaction }: Props) {
+export function TransactionFormDialog({ accounts, categories, transaction, trigger }: Props) {
   const idPrefix = `tx-${transaction?.id ?? "new"}`;
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<CashflowType>(transaction?.type ?? "expense");
@@ -113,20 +115,9 @@ export function TransactionFormDialog({ accounts, categories, transaction }: Pro
         setOpen(value);
       }}
     >
-      <DialogTrigger asChild>
-        {transaction ? (
-          <Button variant="ghost" size="icon" aria-label="Edit transaksi">
-            <PencilSimpleIcon className="size-4" />
-          </Button>
-        ) : (
-          <Button size="sm">
-            <PlusIcon className="mr-1 size-4" />
-            Tambah Transaksi
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{transaction ? "Edit Transaksi" : "Tambah Transaksi"}</DialogTitle>
         </DialogHeader>
@@ -224,18 +215,14 @@ export function TransactionFormDialog({ accounts, categories, transaction }: Pro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`${idPrefix}-amount`}>Nominal (Rp)</Label>
-              <Input
+              <Label htmlFor={`${idPrefix}-amount`}>Nominal</Label>
+              <RupiahInput
                 id={`${idPrefix}-amount`}
                 name="amount"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                step="1"
                 required
                 placeholder="0"
                 defaultValue={transaction?.amount}
-                className="h-14 text-2xl font-semibold tabular-nums"
+                className="h-14 text-2xl font-semibold"
               />
             </div>
 

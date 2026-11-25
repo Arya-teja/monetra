@@ -20,12 +20,14 @@ export async function registerUser(data: FormData) {
   });
 
   if (!result.ok) {
-    return {
-      error:
-        result.error.code === "CONFLICT"
-          ? "Email sudah digunakan"
-          : "Registrasi gagal. Silakan coba lagi.",
-    };
+    switch (result.error.code) {
+      case "CONFLICT":
+        return { error: "Email sudah digunakan" };
+      case "VALIDATION_ERROR":
+        return { error: "Data registrasi tidak valid. Periksa kembali isiannya." };
+      default:
+        return { error: "Server tidak dapat dihubungi. Coba lagi beberapa saat lagi." };
+    }
   }
 
   return { success: true };

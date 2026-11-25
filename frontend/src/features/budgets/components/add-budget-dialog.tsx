@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createBudget } from "../actions";
 import type { Category } from "@/features/categories/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { RupiahInput } from "@/components/rupiah-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -85,17 +85,8 @@ export function AddBudgetDialog({ month, categories }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="budget-amount">Nominal Budget (Rp)</Label>
-            <Input
-              id="budget-amount"
-              name="amount"
-              type="number"
-              inputMode="numeric"
-              min="1"
-              step="1"
-              required
-              placeholder="0"
-            />
+            <Label htmlFor="budget-amount">Nominal Budget</Label>
+            <RupiahInput id="budget-amount" name="amount" required placeholder="0" />
           </div>
 
           {error && (
