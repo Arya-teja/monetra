@@ -14,7 +14,7 @@ type LoginResponse = {
   user: { id: string; name: string; email: string };
 };
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const { handlers, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
     maxAge: 60 * 60 * 24 * 7, // 7 days, same as the Go access token

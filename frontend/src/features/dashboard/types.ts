@@ -1,7 +1,7 @@
 import type { Budget } from "@/features/budgets/types";
 import type { Transaction } from "@/features/transactions/types";
 
-export type CategoryTotal = {
+type CategoryTotal = {
   categoryId: string;
   categoryName: string;
   total: number;
