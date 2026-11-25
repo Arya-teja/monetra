@@ -1,0 +1,50 @@
+# Local development: database, migrations, and the Go API.
+#   docker compose up -d --build   start (rebuild after changing backend code)
+#   docker compose down            stop (data stays in the monetra-db-data volume)
+# The frontend runs outside Docker with `npm run dev` for fast hot reload.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: monetra
+      POSTGRES_PASSWORD: monetra
+      POSTGRES_DB: monetra
+    ports:
+      - "5434:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U monetra -d monetra"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  migrate:
+    image: migrate/migrate:v4.20.1
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    command:
+      ["-path", "/migrations", "-database", "postgres://monetra:monetra@db:5432/monetra?sslmode=disable", "up"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    # JWT_SECRET and CORS_ORIGIN come from backend/.env; inside Docker the
+    # database is reached by its service name instead of localhost:5434.
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgres://monetra:monetra@db:5432/monetra?sslmode=disable
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:
+    # Same volume the earlier `docker run` container used, so existing data is kept.
+    name: monetra-db-data

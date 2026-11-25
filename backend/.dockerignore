@@ -1,0 +1,4 @@
+# Secrets are passed as environment variables, never baked into the image.
+.env
+bin/
+*.exe

@@ -15,8 +15,13 @@ type Config struct {
 	CORSOrigin  string
 }
 
-// Load reads configuration from environment variables.
+// Load reads configuration from environment variables. A .env file in the working
+// directory fills in variables that are not set yet (local development only).
 func Load() (Config, error) {
+	if err := loadDotEnv(".env"); err != nil {
+		return Config{}, err
+	}
+
 	cfg := Config{
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		JWTSecret:   os.Getenv("JWT_SECRET"),
