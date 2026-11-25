@@ -72,3 +72,32 @@ test("logging out on another device ends this session on the next page", async (
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login$/);
 });
+
+test("too many wrong passwords lock the login with a clear message", async ({ page }) => {
+  const email = uniqueEmail("lockout");
+  await createUser(email);
+
+  // Waits for each login request, so a message left over from the previous attempt
+  // cannot pass for the result of this one.
+  async function submit(password: string) {
+    await page.getByLabel("Password").fill(password);
+    await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/api/auth/callback/credentials")),
+      page.getByRole("button", { name: "Login" }).click(),
+    ]);
+  }
+
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await submit(`salah-${attempt}`);
+    await expect(page.getByText("Email atau password salah")).toBeVisible();
+    // A failed login keeps the email, so the user only retypes the password.
+    await expect(page.getByLabel("Email")).toHaveValue(email);
+  }
+
+  // Locked now: even the right password is refused with a wait time.
+  await submit(PASSWORD);
+  await expect(page.getByText("Terlalu banyak percobaan login. Coba lagi dalam 15 menit.")).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+});

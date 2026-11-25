@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"log/slog"
+	"math"
 	"net/http"
 
 	"github.com/Arya-teja/monetra/backend/internal/domain"
@@ -12,9 +13,14 @@ import (
 // writeError maps a service error to the standard error response.
 func writeError(w http.ResponseWriter, err error) {
 	var validationErr *domain.ValidationError
+	var tooManyErr *domain.TooManyAttemptsError
 	switch {
 	case errors.As(err, &validationErr):
 		response.ValidationError(w, validationErr.Fields)
+	case errors.As(err, &tooManyErr):
+		// Round up so the client never retries a second too early.
+		seconds := int(math.Ceil(tooManyErr.RetryAfter.Seconds()))
+		response.TooManyRequests(w, "too many failed login attempts", seconds)
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		response.Error(w, http.StatusUnauthorized, response.CodeUnauthorized, "invalid email or password")
 	case errors.Is(err, domain.ErrEmailTaken):

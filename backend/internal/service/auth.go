@@ -45,12 +45,13 @@ type RegisterInput struct {
 }
 
 type AuthService struct {
-	users  domain.UserRepository
-	tokens *TokenManager
+	users    domain.UserRepository
+	tokens   *TokenManager
+	throttle *LoginThrottle
 }
 
-func NewAuthService(users domain.UserRepository, tokens *TokenManager) *AuthService {
-	return &AuthService{users: users, tokens: tokens}
+func NewAuthService(users domain.UserRepository, tokens *TokenManager, throttle *LoginThrottle) *AuthService {
+	return &AuthService{users: users, tokens: tokens, throttle: throttle}
 }
 
 // Register creates a user together with the default categories.
@@ -105,8 +106,16 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (domain
 		return domain.User{}, AccessToken{}, &domain.ValidationError{Fields: fields}
 	}
 
+	// Checked first, so a locked email is refused even with the right password;
+	// otherwise an attacker could keep guessing and see when a guess is right.
+	if wait := s.throttle.RetryAfter(email); wait > 0 {
+		return domain.User{}, AccessToken{}, &domain.TooManyAttemptsError{RetryAfter: wait}
+	}
+
 	user, err := s.users.FindByEmail(ctx, email)
 	if errors.Is(err, domain.ErrNotFound) {
+		// Unknown emails count too, so the response never reveals which emails exist.
+		s.throttle.Fail(email)
 		return domain.User{}, AccessToken{}, domain.ErrInvalidCredentials
 	}
 	if err != nil {
@@ -114,8 +123,10 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (domain
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		s.throttle.Fail(email)
 		return domain.User{}, AccessToken{}, domain.ErrInvalidCredentials
 	}
+	s.throttle.Reset(email)
 
 	token, err := s.tokens.Issue(user.ID, user.TokenVersion)
 	if err != nil {

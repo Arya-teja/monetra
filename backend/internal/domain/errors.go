@@ -1,6 +1,9 @@
 package domain
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 var (
 	ErrNotFound           = errors.New("not found")
@@ -23,4 +26,14 @@ type ValidationError struct {
 
 func (e *ValidationError) Error() string {
 	return "validation failed"
+}
+
+// TooManyAttemptsError means login for this email is locked after too many failed
+// attempts; RetryAfter is how long until it unlocks.
+type TooManyAttemptsError struct {
+	RetryAfter time.Duration
+}
+
+func (e *TooManyAttemptsError) Error() string {
+	return "too many failed login attempts"
 }

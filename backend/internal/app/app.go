@@ -33,7 +33,7 @@ func NewHandler(pool *pgxpool.Pool, cfg Config) http.Handler {
 	transactionRepo := postgres.NewTransactionRepository(pool)
 	budgetRepo := postgres.NewBudgetRepository(pool)
 
-	authService := service.NewAuthService(postgres.NewUserRepository(pool), tokens)
+	authService := service.NewAuthService(postgres.NewUserRepository(pool), tokens, service.NewLoginThrottle(cfg.Now))
 	accountService := service.NewAccountService(accountRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
 	transactionService := service.NewTransactionService(transactionRepo, accountRepo, categoryRepo)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { AuthCard } from "@/features/auth/components/auth-card";
@@ -8,14 +8,30 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { API_UNAVAILABLE } from "@/lib/auth-errors";
+import { API_UNAVAILABLE, retryAfterMinutes } from "@/lib/auth-errors";
+
+function loginErrorMessage(code: string | undefined) {
+  const minutes = retryAfterMinutes(code);
+  if (minutes !== null) {
+    return minutes > 0
+      ? `Terlalu banyak percobaan login. Coba lagi dalam ${minutes} menit.`
+      : "Terlalu banyak percobaan login. Coba lagi beberapa saat lagi.";
+  }
+  return code === API_UNAVAILABLE
+    ? "Server tidak dapat dihubungi. Coba lagi beberapa saat lagi."
+    : "Email atau password salah";
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  // onSubmit, not a form action: React resets a form after its action runs, which
+  // would clear what the user typed whenever the submit fails.
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     setLoading(true);
     setError(null);
     const result = await signIn("credentials", {
@@ -24,11 +40,7 @@ export default function LoginPage() {
       redirect: false,
     });
     if (result?.error) {
-      setError(
-        result.code === API_UNAVAILABLE
-          ? "Server tidak dapat dihubungi. Coba lagi beberapa saat lagi."
-          : "Email atau password salah",
-      );
+      setError(loginErrorMessage(result.code));
       setLoading(false);
       return;
     }
@@ -41,7 +53,7 @@ export default function LoginPage() {
       description="Login dan lihat uangmu dengan cara yang lebih sederhana."
       footer={{ text: "Belum punya akun?", linkLabel: "Daftar di sini", href: "/register" }}
     >
-      <form action={handleSubmit} className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Email</Label>
           <Input

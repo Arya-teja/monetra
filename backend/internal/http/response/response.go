@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 )
 
 type ErrorCode string
@@ -13,6 +14,7 @@ const (
 	CodeUnauthorized ErrorCode = "UNAUTHORIZED"
 	CodeNotFound     ErrorCode = "NOT_FOUND"
 	CodeConflict     ErrorCode = "CONFLICT"
+	CodeTooMany      ErrorCode = "TOO_MANY_REQUESTS"
 	CodeInternal     ErrorCode = "INTERNAL_ERROR"
 )
 
@@ -56,6 +58,18 @@ func ValidationError(w http.ResponseWriter, details map[string]string) {
 		Code:    CodeValidation,
 		Message: "invalid input",
 		Details: details,
+	}})
+}
+
+// TooManyRequests writes a 429 response. The wait is sent both as the standard
+// Retry-After header and in details, which the frontend reads from the body.
+func TooManyRequests(w http.ResponseWriter, message string, retryAfterSeconds int) {
+	seconds := strconv.Itoa(retryAfterSeconds)
+	w.Header().Set("Retry-After", seconds)
+	write(w, http.StatusTooManyRequests, envelope{Error: &errorBody{
+		Code:    CodeTooMany,
+		Message: message,
+		Details: map[string]string{"retryAfterSeconds": seconds},
 	}})
 }
 

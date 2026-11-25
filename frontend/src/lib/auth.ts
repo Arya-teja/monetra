@@ -1,11 +1,14 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { apiRequest } from "@/lib/api";
-import { API_UNAVAILABLE } from "@/lib/auth-errors";
+import { API_UNAVAILABLE, tooManyAttemptsCode } from "@/lib/auth-errors";
 
-// Lets the login page tell "wrong password" apart from "the Go API could not be reached".
-class ApiUnavailableError extends CredentialsSignin {
-  code = API_UNAVAILABLE;
+// A failed login with a reason the login page can show (see lib/auth-errors.ts).
+class LoginRefusedError extends CredentialsSignin {
+  constructor(code: string) {
+    super();
+    this.code = code;
+  }
 }
 
 type LoginResponse = {
@@ -41,7 +44,12 @@ export const { handlers, signOut, auth } = NextAuth({
           if (result.error.code === "UNAUTHORIZED" || result.error.code === "VALIDATION_ERROR") {
             return null;
           }
-          throw new ApiUnavailableError();
+          if (result.error.code === "TOO_MANY_REQUESTS") {
+            throw new LoginRefusedError(
+              tooManyAttemptsCode(Number(result.error.details?.retryAfterSeconds)),
+            );
+          }
+          throw new LoginRefusedError(API_UNAVAILABLE);
         }
 
         const { accessToken, expiresAt, user } = result.data;

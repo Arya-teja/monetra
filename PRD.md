@@ -250,7 +250,9 @@ Base URL: `/api/v1` · Auth: `Authorization: Bearer <token>` (kecuali register/l
 | GET    | `/dashboard/summary` | `?month=2026-11` → saldo total, income, expense, % terpakai, top kategori, budget alerts, transaksi terakhir |
 | GET    | `/dashboard/trend`   | `?months=6` → income vs expense per bulan                                                                    |
 
-Kode error standar: `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` (409), `INTERNAL_ERROR` (500).
+Kode error standar: `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` (409), `TOO_MANY_REQUESTS` (429), `INTERNAL_ERROR` (500).
+
+Login dikunci per email setelah 5 kali gagal dalam 15 menit: `POST /auth/login` membalas 429 `TOO_MANY_REQUESTS` dengan header `Retry-After` dan `details.retryAfterSeconds`.
 
 ---
 

@@ -543,3 +543,39 @@ func TestLogoutRevokesTokensOnEveryDevice(t *testing.T) {
 	}](t, signedIn.Data).AccessToken}
 	fresh.expect(200, "GET", "/api/v1/auth/me", nil)
 }
+
+func TestLoginIsLockedAfterRepeatedFailures(t *testing.T) {
+	srv, _ := newServer(t)
+	signUp(t, srv, "locked@example.com")
+	anon := &client{t: t, url: srv.URL}
+	wrong := map[string]string{"email": "locked@example.com", "password": "salah-salah"}
+
+	for i := 0; i < 5; i++ {
+		anon.expect(401, "POST", "/api/v1/auth/login", wrong)
+	}
+
+	req, err := http.NewRequest("POST", srv.URL+"/api/v1/auth/login",
+		strings.NewReader(`{"email":"LOCKED@example.com","password":"rahasia123"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	var body response
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+
+	if res.StatusCode != 429 || body.Error == nil || body.Error.Code != "TOO_MANY_REQUESTS" {
+		t.Fatalf("locked login: status %d error %+v, want 429 TOO_MANY_REQUESTS", res.StatusCode, body.Error)
+	}
+	if res.Header.Get("Retry-After") != "900" || body.Error.Details["retryAfterSeconds"] != "900" {
+		t.Errorf("Retry-After header %q / detail %q, want 900 seconds", res.Header.Get("Retry-After"), body.Error.Details["retryAfterSeconds"])
+	}
+
+	// Other emails are not affected.
+	signUp(t, srv, "other@example.com")
+}

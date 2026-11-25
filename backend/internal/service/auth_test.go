@@ -66,7 +66,7 @@ func (r *fakeUserRepository) IncrementTokenVersion(ctx context.Context, id strin
 func newTestAuthService() (*AuthService, *fakeUserRepository, *TokenManager) {
 	repo := newFakeUserRepository()
 	tokens := NewTokenManager("test-secret-with-at-least-32-chars!", time.Hour)
-	return NewAuthService(repo, tokens), repo, tokens
+	return NewAuthService(repo, tokens, NewLoginThrottle(time.Now)), repo, tokens
 }
 
 func TestRegister_CreatesUserWithHashedPasswordAndDefaultCategories(t *testing.T) {

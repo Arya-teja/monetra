@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/features/auth/actions";
 import { AuthCard } from "@/features/auth/components/auth-card";
@@ -14,7 +14,11 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  // onSubmit, not a form action: React resets a form after its action runs, which
+  // would clear what the user typed whenever the submit fails.
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     setLoading(true);
     setError(null);
     const result = await registerUser(formData);
@@ -32,7 +36,7 @@ export default function RegisterPage() {
       description="Daftar dan mulai lihat uangmu dengan cara yang lebih sederhana."
       footer={{ text: "Sudah punya akun?", linkLabel: "Masuk di sini", href: "/login" }}
     >
-      <form action={handleSubmit} className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
           <Label htmlFor="name">Nama</Label>
           <Input
