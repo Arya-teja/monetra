@@ -27,6 +27,9 @@ function NavLink({ item, layout }: { item: NavItem; layout: "bottom" | "sidebar"
   return (
     <Link
       href={item.href}
+      // No prefetch: prefetch responses that arrive after a logout would
+      // re-set the session cookie (each response refreshes it).
+      prefetch={false}
       aria-current={active ? "page" : undefined}
       className={cn(
         "flex items-center rounded-lg font-medium transition-colors",
@@ -77,6 +80,7 @@ export function SettingsLink() {
   return (
     <Link
       href={SETTINGS.href}
+      prefetch={false}
       aria-label="Pengaturan"
       aria-current={active ? "page" : undefined}
       className={cn(

@@ -74,6 +74,16 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}{AccessToken: token.Value, ExpiresAt: token.ExpiresAt, User: toUserResponse(user)})
 }
 
+// Logout revokes all of the user's access tokens (every device).
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if err := h.auth.Logout(r.Context(), middleware.UserID(r.Context())); err != nil {
+		writeError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	user, err := h.auth.Me(r.Context(), middleware.UserID(r.Context()))
 	if err != nil {

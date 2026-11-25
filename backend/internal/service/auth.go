@@ -117,11 +117,41 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (domain
 		return domain.User{}, AccessToken{}, domain.ErrInvalidCredentials
 	}
 
-	token, err := s.tokens.Issue(user.ID)
+	token, err := s.tokens.Issue(user.ID, user.TokenVersion)
 	if err != nil {
 		return domain.User{}, AccessToken{}, fmt.Errorf("issue token: %w", err)
 	}
 	return user, token, nil
+}
+
+// Authenticate returns the user ID of a valid access token. It returns
+// ErrInvalidToken when the token is malformed, expired, or was issued before the
+// user's last logout.
+func (s *AuthService) Authenticate(ctx context.Context, token string) (string, error) {
+	userID, version, err := s.tokens.Verify(token)
+	if err != nil {
+		return "", domain.ErrInvalidToken
+	}
+
+	current, err := s.users.TokenVersion(ctx, userID)
+	if errors.Is(err, domain.ErrNotFound) {
+		return "", domain.ErrInvalidToken
+	}
+	if err != nil {
+		return "", fmt.Errorf("get token version: %w", err)
+	}
+	if version != current {
+		return "", domain.ErrInvalidToken
+	}
+	return userID, nil
+}
+
+// Logout revokes every access token the user holds, on all devices.
+func (s *AuthService) Logout(ctx context.Context, userID string) error {
+	if err := s.users.IncrementTokenVersion(ctx, userID); err != nil {
+		return fmt.Errorf("revoke tokens: %w", err)
+	}
+	return nil
 }
 
 // Me returns the profile of the authenticated user.

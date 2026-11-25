@@ -148,4 +148,5 @@ type User struct {
 	PasswordHash string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	TokenVersion int32
 }

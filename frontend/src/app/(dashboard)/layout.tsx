@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Toaster } from "sonner";
+import { apiRequest } from "@/lib/api";
 import { auth, signOut } from "@/lib/auth";
 import { getAccounts } from "@/features/accounts/actions";
 import { getCategories } from "@/features/categories/actions";
@@ -9,14 +10,20 @@ import { BottomNav, SettingsLink, SidebarNav } from "@/components/layout/app-nav
 import { Button } from "@/components/ui/button";
 import { PlusIcon, SignOutIcon } from "@phosphor-icons/react/ssr";
 
+// Revokes the Go token on every device first, so a session cookie that survives
+// in the browser (or is stolen) can no longer reach any data.
 async function logout() {
   "use server";
+  const session = await auth();
+  if (session?.accessToken) {
+    await apiRequest("/auth/logout", { method: "POST", token: session.accessToken });
+  }
   await signOut({ redirectTo: "/login" });
 }
 
 function Logo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2 font-heading text-lg font-semibold">
+    <Link href="/dashboard" prefetch={false} className="flex items-center gap-2 font-heading text-lg font-semibold">
       <span
         aria-hidden="true"
         className="grid size-8 place-items-center rounded-lg bg-brand text-sm font-bold text-primary-foreground"

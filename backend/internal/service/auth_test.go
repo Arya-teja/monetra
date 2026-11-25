@@ -48,6 +48,21 @@ func (r *fakeUserRepository) FindByID(_ context.Context, id string) (domain.User
 	return domain.User{}, domain.ErrNotFound
 }
 
+func (r *fakeUserRepository) TokenVersion(ctx context.Context, id string) (int, error) {
+	user, err := r.FindByID(ctx, id)
+	return user.TokenVersion, err
+}
+
+func (r *fakeUserRepository) IncrementTokenVersion(ctx context.Context, id string) error {
+	user, err := r.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	user.TokenVersion++
+	r.users[user.Email] = user
+	return nil
+}
+
 func newTestAuthService() (*AuthService, *fakeUserRepository, *TokenManager) {
 	repo := newFakeUserRepository()
 	tokens := NewTokenManager("test-secret-with-at-least-32-chars!", time.Hour)
@@ -148,7 +163,7 @@ func TestRegister_RejectsDuplicateEmail(t *testing.T) {
 }
 
 func TestLogin_ReturnsTokenForValidCredentials(t *testing.T) {
-	svc, _, tokens := newTestAuthService()
+	svc, _, _ := newTestAuthService()
 	registered, err := svc.Register(context.Background(), RegisterInput{
 		Name: "Arya", Email: "arya@example.com", Password: "rahasia123",
 	})
@@ -164,9 +179,9 @@ func TestLogin_ReturnsTokenForValidCredentials(t *testing.T) {
 		t.Errorf("user ID = %q, want %q", user.ID, registered.ID)
 	}
 
-	userID, err := tokens.Verify(token.Value)
+	userID, err := svc.Authenticate(context.Background(), token.Value)
 	if err != nil {
-		t.Fatalf("Verify() error = %v", err)
+		t.Fatalf("Authenticate() error = %v", err)
 	}
 	if userID != registered.ID {
 		t.Errorf("token subject = %q, want %q", userID, registered.ID)
@@ -210,5 +225,53 @@ func TestLogin_RequiresEmailAndPassword(t *testing.T) {
 	}
 	if validationErr.Fields["email"] == "" || validationErr.Fields["password"] == "" {
 		t.Errorf("fields = %v, want email and password errors", validationErr.Fields)
+	}
+}
+
+func TestLogout_RevokesEarlierTokensOnAllDevices(t *testing.T) {
+	svc, _, _ := newTestAuthService()
+	ctx := context.Background()
+	if _, err := svc.Register(ctx, RegisterInput{Name: "Arya", Email: "arya@example.com", Password: "rahasia123"}); err != nil {
+		t.Fatalf("Register() error = %v", err)
+	}
+	login := func() string {
+		t.Helper()
+		_, token, err := svc.Login(ctx, "arya@example.com", "rahasia123")
+		if err != nil {
+			t.Fatalf("Login() error = %v", err)
+		}
+		return token.Value
+	}
+	phone, laptop := login(), login()
+
+	userID, err := svc.Authenticate(ctx, phone)
+	if err != nil {
+		t.Fatalf("Authenticate() before logout error = %v", err)
+	}
+	if err := svc.Logout(ctx, userID); err != nil {
+		t.Fatalf("Logout() error = %v", err)
+	}
+
+	for name, token := range map[string]string{"phone": phone, "laptop": laptop} {
+		if _, err := svc.Authenticate(ctx, token); !errors.Is(err, domain.ErrInvalidToken) {
+			t.Errorf("%s token after logout: error = %v, want ErrInvalidToken", name, err)
+		}
+	}
+	if _, err := svc.Authenticate(ctx, login()); err != nil {
+		t.Errorf("token from a new login: error = %v, want nil", err)
+	}
+}
+
+func TestAuthenticate_RejectsInvalidTokens(t *testing.T) {
+	svc, _, tokens := newTestAuthService()
+	ghost, err := tokens.Issue("no-such-user", 0)
+	if err != nil {
+		t.Fatalf("Issue() error = %v", err)
+	}
+
+	for name, token := range map[string]string{"garbage": "not.a.jwt", "unknown user": ghost.Value} {
+		if _, err := svc.Authenticate(context.Background(), token); !errors.Is(err, domain.ErrInvalidToken) {
+			t.Errorf("%s: error = %v, want ErrInvalidToken", name, err)
+		}
 	}
 }

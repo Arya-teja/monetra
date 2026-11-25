@@ -83,12 +83,35 @@ func (r *UserRepository) FindByID(ctx context.Context, id string) (domain.User, 
 	return toDomainUser(row), nil
 }
 
+func (r *UserRepository) TokenVersion(ctx context.Context, id string) (int, error) {
+	version, err := r.queries.GetTokenVersion(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) || hasCode(err, codeInvalidText) {
+		return 0, domain.ErrNotFound
+	}
+	if err != nil {
+		return 0, fmt.Errorf("select token version: %w", err)
+	}
+	return int(version), nil
+}
+
+func (r *UserRepository) IncrementTokenVersion(ctx context.Context, id string) error {
+	updated, err := r.queries.IncrementTokenVersion(ctx, id)
+	if err != nil {
+		return fmt.Errorf("increment token version: %w", err)
+	}
+	if updated == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
 func toDomainUser(row db.User) domain.User {
 	return domain.User{
 		ID:           row.ID,
 		Name:         row.Name,
 		Email:        row.Email,
 		PasswordHash: row.PasswordHash,
+		TokenVersion: int(row.TokenVersion),
 		CreatedAt:    row.CreatedAt,
 	}
 }
